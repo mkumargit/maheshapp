@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
+<script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+<script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+	body {
+			font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+			font-size: 62.5%;
+	}
+	
+	#tabs { margin-top: 1em; }
+    #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+	.activeLoginClass { cursor: pointer; }
+	div { 
+		border: none;
+		resize:none;
+	}
+	/* force a height so the tabs don't jump as content height changes */
+    #tabs .tabs-spacer { float: left; height: 200px; }
+    .tabs-bottom .ui-tabs-nav { clear: left; padding: 0 .2em .2em .2em; }
+    .tabs-bottom .ui-tabs-nav li { top: auto; bottom: 0; margin: 0 .2em 1px 0; border-bottom: auto; border-top: 0; }
+    .tabs-bottom .ui-tabs-nav li.ui-tabs-active { margin-top: -1px; padding-top: 1px; }
+	
+	div.floating-menu {position:fixed;background:#D0D0D0;border:1px solid #ffcc00;width:200px;z-index:100;bottom: 0;right:0}
+	div.floating-menu a, div.floating-menu h3 {display:block;margin:0 0.5em;}
+	.ui-tabs-panel {
+    padding: 0em 0.4em;
+	}
+	.msgBlock{
+        height:170px;
+        overflow:auto;
+    }
+	.roster {
+		width: 100%;
+		overflow: hidden;
+	}
+	.roster_hover {
+		background-color: #FFFFFF;
+		width: 100%;
+		overflow: hidden;
+		color:black;
+	}
+	.roster_hover span.ui-icon-close {
+		float:right;
+		cursor:pointer;
+	}
+	#tabs li .ui-tabs-selected {
+		background-color: black;
+	}
+	
+	div.chat-menu {position:fixed;background:white;border:1px solid #ffcc00;width:50%;height:600px;bottom:20%;right:25%;left:25%;top:20%;}
+	span.loggedIn {color:black;font-size:13px;padding-left:5px}
+	span.loggedInUser {color:blue;font-size:13px;padding-left:5px}
+	span.loggedIn_hover {color:black;font-size:13px;padding-left:5px;cursor:pointer}
+		
+	.hidden {
+		display: none
+	}
+</style>	
+<script>
+$(function(){
+
+	var iosocket = io.connect("http://localhost");
+	var room="";
+	var nickname = "";
+
+	iosocket.on('connect', function () {
+		
+		iosocket.on('message', function(message) {
+
+		});
+		
+		iosocket.on('privateMessage', function(message) {
+			
+		});
+		
+		iosocket.on('publicMessage', function(message) {
+			var msgArea = $("#chatMessages");
+			var chatMsg  = '<br/>'+message+'<br/>';
+			$(msgArea).append(chatMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+		});
+		
+		iosocket.on('allUsers', function(users) {
+			var userList = users.split(",");
+			userList.sort();
+			$("#loggedInUsers").html("");
+			var nofOfUsers = 0;
+			for(var i=0;i<userList.length;i++){
+				if(userList[i] != null && userList[i] != ""){
+					nofOfUsers++;
+					if(userList[i] == nickname && userList[i])
+						$("#loggedInUsers").append("<br/><span class='loggedInUser' id='"+userList[i]+"_loggedIn'>"+userList[i]+"</span><br/>");
+					else	
+					$("#loggedInUsers").append("<br/><span class='loggedIn' id='"+userList[i]+"_loggedIn'>"+userList[i]+"</span><br/>");
+				}
+			}
+			$("#usersMessageHeader").html("<center>Users ("+nofOfUsers+")</center>");
+		});
+		
+		iosocket.on('joinRoom', function(user) {
+			var msgArea = $("#chatMessages");
+			var chatMsg  = '<br/>'+user+': has joined the room<br/>';
+			$(msgArea).append(chatMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+		});
+		
+		iosocket.on('unJoinRoom', function(user) {
+			$("#"+user+"_loggedIn").remove();
+			var msgArea = $("#chatMessages");
+			var chatMsg  = '<br/>'+user+': has left the room<br/>';
+			$(msgArea).append(chatMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+		})
+		
+		iosocket.on('disconnect', function() {
+			var msgArea = $("#chatMessages");
+			var chatMsg  = '<br/>Disconnected from Server<br/>';
+			$(msgArea).append(chatMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+		});
+		
+		
+		
+		//Joining dialog : user enters room name and handle
+		$('#joining_dialog').dialog({
+			autoOpen: false,
+			draggable: false,
+			modal: true,
+			title: 'Enter Room name and Handle',
+			buttons: {
+				"Ok": function () {
+					$(document).trigger('join', {
+						joiningRoomName: $('#joiningRoomName').val(),
+						joiningHandle: $('#joiningHandle').val()
+					});
+
+					$('#joiningRoomName').val('');
+					$('#joiningHandle').val('');
+					
+					$(this).dialog('close');
+				}
+			}
+		});
+		
+		$('#joining_dialog').dialog('open');
+		
+		//after user has entered room name and nickname
+		$(document).bind('join', function (ev, data) {
+			
+			room = data.joiningRoomName;
+			nickname = data.joiningHandle;
+			
+			iosocket.emit('joinRoom', {room : room, nickname : nickname});
+			
+			$("#roomMessageHeader").html("<center> Welcome to <b>"+room+"</b> chat room");
+			
+		})
+		
+	});//end of io.connect
+	
+	$( "#userGroupMessage" ).live( "keypress", function(e) {
+		if (e.which == 13 ) {
+				var groupMsg = $(this).val();
+				$(this).val("");
+				
+				//iosocket.send(groupMsg);
+				
+				iosocket.emit('publicMessage', {room : room, message : groupMsg});
+				
+          }
+	})
+	
+	$(".loggedIn").live("mouseenter",function(){
+           $(this).removeClass("loggedIn").addClass("loggedIn_hover");
+    })
+	
+    $(".loggedIn_hover").live("mouseleave",function(){
+           $(this).removeClass("loggedIn_hover").addClass("loggedIn");
+                
+    })
+	
+	$(".loggedIn_hover").live("click",function(){
+		addTab($(this).html());
+	})
+	
+	 //called when user presses enter key to send message from chat window
+	  $(".newText").live("keypress",function(e){
+         if (e.which == 13 ) {
+            sendMsg(this);
+          }
+      })
+	
+	//Tab related
+	
+    var tabTitle = $( "#tab_title" ),
+    tabContent = $( "#tab_content" ),
+    tabTemplate = "<li><a href='#{href}'><img src='icons/offline.png' height='6px' width='6px'/>&nbsp;#{label}</a><span class='ui-icon ui-icon-close'>Remove Tab</span></li>",
+    tabCounter = 0;
+ 
+    var tabs = $( "#tabs" ).tabs();
+		
+	function moveToBottom(){
+		// fix the classes
+		$( ".tabs-bottom .ui-tabs-nav, .tabs-bottom .ui-tabs-nav > *" )
+			.removeClass( "ui-corner-all ui-corner-top" )
+			.addClass( "ui-corner-bottom" );
+ 
+		// move the nav to the bottom
+		$( ".tabs-bottom .ui-tabs-nav" ).appendTo( ".tabs-bottom" );
+
+	}
+	// addTab function: adds new tab using the input from the form above
+	function addTab(targetUser) {
+		var tabContentHtml= '<div class="msgBlock"></div><input type="textbox" class="newText" placeholder="Type here.." size="30"/>';
+		var tabLabel = targetUser;
+		var label = tabLabel,
+			id = targetUser,
+			li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) );
+
+		tabs.find( ".ui-tabs-nav" ).append( li );
+		tabs.append( "<div id='" + id + "'>" + tabContentHtml + "</div>" );
+		moveToBottom();
+		tabs.tabs( "refresh" );
+		$("#tabs").show();    
+		$("#tabs").tabs("select", "#"+id);
+		tabCounter++;
+		
+		/*Change the Image of Anchor tag
+		var chatDivImg;
+		var chatDivAnchors = $(tabs).find("a");
+		if($(chatDivAnchors).length > 0){
+			$(chatDivAnchors).each(function() {
+				if($(this).attr("href") == ("#"+targetUser)){
+					$(this).find("img").attr("src",prevRosterImgSrc);
+				}
+			})
+		}*/
+		//alert(tabs.find('.ui-tabs-selected').html());
+		//background:#FDF5CE; color:#FF0000;
+		//tabs.tabs( "refresh" );
+		
+	}//end of addTab
+	
+		  // sends chat message to another user
+	  sendMsg = function(msgInputElem){
+		var targetUser = $(msgInputElem).closest("div").attr("id");
+		var parentdivId = "#"+targetUser;
+		
+		var msgInput = $(msgInputElem).val();
+		var msgArea = $(msgInputElem).closest("div").find(".msgBlock");
+
+		if (msgInput.length <= 0){
+			alert('Enter some message before sending!');
+		}
+			
+		var currVal = $(msgArea).val();
+		var currTime = new Date();
+		var chatMsg  = '<br/><span style="color:gray">'+username+' ['+currTime.getHours()+':'+currTime.getMinutes()+']:</span><br/>'+msgInput;
+		$(msgArea).append(chatMsg);
+		$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+		$(msgInputElem).val("");
+		
+		iosocket.emit('privateMessage', {user : targetUser, message : msgInput});
+	  }
+	  
+	// close icon: removing the tab on click
+	$( "#tabs span.ui-icon-close" ).live( "click", function() {
+	
+		var closestAnchor = $( this ).closest( "li" ).find("a");
+		var imgSrc = $(closestAnchor).find("img").attr("src");
+
+		var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+		$( "#" + panelId ).remove();
+		tabs.tabs( "refresh" );
+		tabCounter--;
+		if(tabCounter==0)
+			$("#tabs").hide();
+			
+		var jid = panelId+'@mkumar2l';
+		var rosterDivId =  Hello.jid_to_id(jid);
+		var rosterImg = $("#"+rosterDivId).find("img");
+		$(rosterImg).attr("src",imgSrc);
+	});
+		
+	
+  });//end of $(function
+  
+</script>
+</head>
+<body>
+
+<!-- Enter room dialog -->
+<div id='joining_dialog' class='hidden'>
+      <label>Room:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningRoomName' value='room'><br/><br/>
+      <label>Handle:&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningHandle'>
+</div>
+
+<!-- Show Group Client -->
+<div id="displaydiv" class="chat-menu">
+	<div style="float:left;width:20%;height:600px;overflow:auto;border:1px solid #ffcc00">
+		<div id="usersMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
+		<div id="loggedInUsers"></div>
+	</div>
+	<div style="float:right;width:79%;height:600px;border:1px solid #ffcc00">
+		<div id="roomMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
+		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px"></div>
+		<input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/>
+	</div>
+</div>
+
+<!-- User chat tabs -->
+<div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom">
+    <ul></ul>
+	<div class="tabs-spacer"></div>
+</div>
+
+</body>
+</html>
