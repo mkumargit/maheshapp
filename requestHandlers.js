@@ -56,7 +56,7 @@ function show(response,request,io){
 		'<script src="/socket.io/socket.io.js"></script>'+
 		'<script>'+
 		'$(function() {'+
-		'var iosocket = io.connect("http://localhost");iosocket.on("connect", function () {'+
+		'var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");iosocket.on("connect", function () {'+
 		'iosocket.on("message", function(message) {'+
 		'var progressVal = parseInt(message);'+
 		'$(".caption").html(progressVal+"%");'+
