@@ -21,7 +21,7 @@ http.listen(port);
 
 		var pathname = url.parse(request.url).pathname;
 		
-		router.route(handle,pathname,response,request); //send request directly to router.js
+		router.route(handle,pathname,response,request,io); //send request directly to router.js
 	}
 	
 	function onConnected(socket) {

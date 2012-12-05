@@ -6,6 +6,7 @@
   },
   "engines": {
     "node": "0.8.x",
-    "npm": "1.1.x"
+    "npm": "1.1.x",
+	"formidable": "1.0.11"
   }
 }
