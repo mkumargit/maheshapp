@@ -9,7 +9,7 @@ function route(handle,pathname,response,request,io){
 			handle[pathname](response,request,io);
 	  } else {
 			file.serve(request, response, function(err, result) {
-			  if (err) {
+			  /*if (err) {
 				console.error('Error serving %s - %s', request.url, err.message);
 				if (err.status === 404 || err.status === 500) {
 					console.log("No request handler found for " + pathname);
@@ -25,7 +25,7 @@ function route(handle,pathname,response,request,io){
 			  } 
 			  else {
 				console.log('%s - %s', request.url, response.message);
-			  }
+			  }*/
 			});
 	  }
 
