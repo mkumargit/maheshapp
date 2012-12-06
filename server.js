@@ -18,6 +18,7 @@ http.listen(port);
 		handle["/start"] = requestHandlers.start;
 		handle["/upload"] = requestHandlers.upload;
 		handle["/show"] = requestHandlers.show;
+		handle["/transfer"] = requestHandlers.transfer;
 
 		var pathname = url.parse(request.url).pathname;
 		
