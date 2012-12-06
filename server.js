@@ -5,6 +5,8 @@ var http = require('http').createServer(onRequest);
 var url = require('url');
 var io = require('socket.io').listen(http);
 
+var fs = require("fs");
+
 var port = process.env.PORT || 5000;
 
 http.listen(port);
@@ -23,7 +25,25 @@ http.listen(port);
 		var pathname = url.parse(request.url).pathname;
 		console.log('pathname is '+pathname);
 		
-		router.route(handle,pathname,response,request,io); //send request directly to router.js
+		if(pathname =='/books.jpg){
+
+			fs.readFile('./books.jpg', "binary",function (err, data) {
+
+				if (err) {
+					response.writeHead(500);
+					response.end();
+				}
+				else {
+					response.writeHead(200, {'Content-Type': 'image/jpeg'});
+					response.write(data,"binary");
+					response.end();
+				}
+			})
+		}
+		else{
+		
+			router.route(handle,pathname,response,request,io); //send request directly to router.js
+		}
 	}
 	
 	function onConnected(socket) {
