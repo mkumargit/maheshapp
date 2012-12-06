@@ -74,7 +74,7 @@ http.listen(port);
 		});
 		
 		socket.on('message', function (msg) {
-			socket.get('nickname', function (err, name) {
+			/*socket.get('nickname', function (err, name) {
 				var userRoom,userMessage;
 				
 				//socket.broadcast.emit('message', msg);
@@ -89,7 +89,9 @@ http.listen(port);
 				console.log('Message broadcast to', userRoom);
 				console.log('Message is', userMessage);
 				socket.broadcast.to(userRoom).emit(userMessage);
-			});
+			});*/
+			
+			socket.emit('message', msg);
 			
 	    });
 		
