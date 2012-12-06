@@ -25,7 +25,7 @@ http.listen(port);
 		var pathname = url.parse(request.url).pathname;
 		console.log('pathname is '+pathname);
 		
-		if(pathname =='/books.jpg){
+		if(pathname =='/books.jpg'){
 
 			fs.readFile('./books.jpg', "binary",function (err, data) {
 
