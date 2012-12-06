@@ -21,6 +21,7 @@ http.listen(port);
 		handle["/transfer"] = requestHandlers.transfer;
 
 		var pathname = url.parse(request.url).pathname;
+		console.log('pathname is '+pathname);
 		
 		router.route(handle,pathname,response,request,io); //send request directly to router.js
 	}
