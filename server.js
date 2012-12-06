@@ -19,7 +19,7 @@ http.listen(port);
 		
 		file.serve(request, response, function(err, result) {
 		  if (err) {
-			console.error('Error serving %s - %s', req.url, err.message);
+			console.error('Error serving %s - %s', request.url, err.message);
 			if (err.status === 404 || err.status === 500) {
 				console.log('404  or 500 is returned');
 				
