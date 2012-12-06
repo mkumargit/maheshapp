@@ -6,8 +6,6 @@ var url = require('url');
 var io = require('socket.io').listen(http);
 
 var fs = require("fs");
-var static = require('node-static');
-var file = new(static.Server)();
 
 var port = process.env.PORT || 5000;
 
@@ -16,36 +14,8 @@ http.listen(port);
 	function onRequest(request,response) {
 	
 		console.log('node.js server started and is listening at 8888 port ...');
-		
-		file.serve(request, response, function(err, result) {
-		  if (err) {
-			console.error('Error serving %s - %s', request.url, err.message);
-			if (err.status === 404 || err.status === 500) {
-				console.log('404  or 500 is returned');
-				
-				var handle = {}
-				handle["/"] = requestHandlers.start;
-				handle["/start"] = requestHandlers.start;
-				handle["/upload"] = requestHandlers.upload;
-				handle["/show"] = requestHandlers.show;
-				handle["/transfer"] = requestHandlers.transfer;
 
-				var pathname = url.parse(request.url).pathname;
-				
-				router.route(handle,pathname,response,request,io); //send request directly to router.js
-				
-			  //file.serveFile(util.format('/%d.html', err.status), err.status, {}, req, res);
-			} else {
-			  console.log('other error is returned'); 
-			  response.writeHead(err.status, err.headers);
-			  response.end();
-			}
-		  } else {
-			console.log('%s - %s', request.url, response.message);
-		  }
-		});
-
-		/*var handle = {}
+		var handle = {}
 		handle["/"] = requestHandlers.start;
 		handle["/start"] = requestHandlers.start;
 		handle["/upload"] = requestHandlers.upload;
@@ -53,27 +23,8 @@ http.listen(port);
 		handle["/transfer"] = requestHandlers.transfer;
 
 		var pathname = url.parse(request.url).pathname;
-		console.log('pathname is '+pathname);
 		
-		if(pathname =='/books.jpg'){
-
-			fs.readFile('./books.jpg', "binary",function (err, data) {
-
-				if (err) {
-					response.writeHead(500);
-					response.end();
-				}
-				else {
-					response.writeHead(200, {'Content-Type': 'image/jpeg'});
-					response.write(data,"binary");
-					response.end();
-				}
-			})
-		}
-		else{
-		
-			router.route(handle,pathname,response,request,io); //send request directly to router.js
-		}*/
+		router.route(handle,pathname,response,request,io); //send request directly to router.js
 	}
 	
 	function onConnected(socket) {
