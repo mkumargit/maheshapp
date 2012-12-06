@@ -6,6 +6,8 @@ var url = require('url');
 var io = require('socket.io').listen(http);
 
 var fs = require("fs");
+var static = require('node-static');
+var file = new(static.Server)();
 
 var port = process.env.PORT || 5000;
 
@@ -15,6 +17,20 @@ http.listen(port);
 	
 		console.log('node.js server started and is listening at 8888 port ...');
 		
+		file.serve(req, res, function(err, result) {
+		  if (err) {
+			console.error('Error serving %s - %s', req.url, err.message);
+			if (err.status === 404 || err.status === 500) {
+			  file.serveFile(util.format('/%d.html', err.status), err.status, {}, req, res);
+			} else {
+			  res.writeHead(err.status, err.headers);
+			  res.end();
+			}
+		  } else {
+			console.log('%s - %s', req.url, res.message);
+		  }
+		});
+
 		var handle = {}
 		handle["/"] = requestHandlers.start;
 		handle["/start"] = requestHandlers.start;
@@ -25,7 +41,7 @@ http.listen(port);
 		var pathname = url.parse(request.url).pathname;
 		console.log('pathname is '+pathname);
 		
-		if(pathname =='/books.jpg'){
+		/*if(pathname =='/books.jpg'){
 
 			fs.readFile('./books.jpg', "binary",function (err, data) {
 
@@ -40,10 +56,10 @@ http.listen(port);
 				}
 			})
 		}
-		else{
+		else{*/
 		
 			router.route(handle,pathname,response,request,io); //send request directly to router.js
-		}
+		//}
 	}
 	
 	function onConnected(socket) {
