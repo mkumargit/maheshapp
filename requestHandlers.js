@@ -6,25 +6,6 @@ var formidable = require("formidable");
 
 function start(response,request,io){
 		
-		/*var body = '<html>'+
-		'<head>'+
-		'<meta http-equiv="Content-Type" '+
-		'content="text/html; charset=UTF-8" />'+
-		'</head>'+
-		'<body>'+
-		'Please upload an image'+
-		'<form action="/upload" enctype="multipart/form-data" '+
-		'method="post">'+
-		'<input type="file" name="upload" multiple="multiple">'+
-		'<input type="submit" value="Upload file" />'+
-		'</form>'+
-		'</body>'+
-		'</html>';
-		
-		response.writeHead(200, {'Content-Type': 'text/html'});
-		response.write(body,"utf-8");
-		response.end();*/
-		
 		fs.readFile('./test.html',function (err, data) {
 		
 		if (err) {
@@ -87,10 +68,10 @@ function show(response,request,io){
 
 function upload(response,request,io){
 
-		var progress=0;
-		var form = new formidable.IncomingForm(),
-        files = [],
-        fields = [];
+	var progress=0;
+	var form = new formidable.IncomingForm(),
+    files = [],
+    fields = [];
 
     form.uploadDir = ".";
 	form.keepExtensions = true;
@@ -126,6 +107,29 @@ function upload(response,request,io){
     form.parse(request);
 }
 
+function transfer(response,request,io){
+
+		fs.readFile('./test.html',function (err, data) {
+		
+		if (err) {
+            response.writeHead(500);
+            response.end();
+        }
+		else {
+			response.writeHead(200, {'Content-Type': 'text/html'});
+			response.write(data,"utf-8");
+			response.end();
+		}
+		
+		})
+}
+
+function recieve (response,request,io){
+	
+}
+
 exports.start = start;
 exports.show = show;
 exports.upload = upload;
+exports.transfer = transfer;
+exports.recieve = recieve;
