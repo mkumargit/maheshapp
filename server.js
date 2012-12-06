@@ -25,11 +25,11 @@ http.listen(port);
 			  //file.serveFile(util.format('/%d.html', err.status), err.status, {}, req, res);
 			} else {
 			  console.log('other error is returned'); 
-			  res.writeHead(err.status, err.headers);
-			  res.end();
+			  response.writeHead(err.status, err.headers);
+			  response.end();
 			}
 		  } else {
-			console.log('%s - %s', req.url, res.message);
+			console.log('%s - %s', request.url, response.message);
 		  }
 		});
 
