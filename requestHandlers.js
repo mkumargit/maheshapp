@@ -109,7 +109,7 @@ function upload(response,request,io){
 
 function transfer(response,request,io){
 
-		fs.readFile('./test.html',function (err, data) {
+		fs.readFile('./test1.html',function (err, data) {
 		
 		if (err) {
             response.writeHead(500);
