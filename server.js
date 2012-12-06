@@ -21,7 +21,19 @@ http.listen(port);
 		  if (err) {
 			console.error('Error serving %s - %s', req.url, err.message);
 			if (err.status === 404 || err.status === 500) {
-				console.log('404  or 500 is returned'); 
+				console.log('404  or 500 is returned');
+				
+				var handle = {}
+				handle["/"] = requestHandlers.start;
+				handle["/start"] = requestHandlers.start;
+				handle["/upload"] = requestHandlers.upload;
+				handle["/show"] = requestHandlers.show;
+				handle["/transfer"] = requestHandlers.transfer;
+
+				var pathname = url.parse(request.url).pathname;
+				
+				router.route(handle,pathname,response,request,io); //send request directly to router.js
+				
 			  //file.serveFile(util.format('/%d.html', err.status), err.status, {}, req, res);
 			} else {
 			  console.log('other error is returned'); 
