@@ -54,7 +54,7 @@
 		background-color: black;
 	}
 	
-	div.chat-menu {position:fixed;background:white;border:1px solid #ffcc00;width:50%;height:600px;bottom:20%;right:25%;left:25%;top:20%;}
+	div.chat-menu {position:fixed;background:white;border:1px solid #ffcc00;width:50%;height:630px;bottom:20%;right:25%;left:25%;top:20%;}
 	span.loggedIn {color:black;font-size:13px;padding-left:5px}
 	span.loggedInUser {color:blue;font-size:13px;padding-left:5px}
 	span.loggedIn_hover {color:black;font-size:13px;padding-left:5px;cursor:pointer}
@@ -65,9 +65,9 @@
 </style>	
 <script>
 $(function(){
-		$("#input1").cleditor({
-        width:        500, // width not including margins, borders or padding
-        height:       250, // height not including margins, borders or padding
+		$("#userGroupMessage").cleditor({
+        width:        700, // width not including margins, borders or padding
+        height:       66, // height not including margins, borders or padding
         controls:     // controls to add to the toolbar
           "bold italic underline strikethrough subscript superscript | font size " +
           "style | color highlight removeformat | bullets numbering | outdent " +
@@ -328,8 +328,6 @@ $(function(){
 </head>
 <body>
 
-<textarea id="input1" name="input1"></textarea>
-
 <!-- Enter room dialog -->
 <div id='joining_dialog' class='hidden'>
       <label>Room:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningRoomName' value='room'><br/><br/>
@@ -338,14 +336,15 @@ $(function(){
 
 <!-- Show Group Client -->
 <div id="displaydiv" class="chat-menu">
-	<div style="float:left;width:20%;height:600px;overflow:auto;border:1px solid #ffcc00">
+	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #ffcc00">
 		<div id="usersMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
 		<div id="loggedInUsers"></div>
 	</div>
-	<div style="float:right;width:79%;height:600px;border:1px solid #ffcc00">
+	<div style="float:right;width:79%;height:630px;border:1px solid #ffcc00">
 		<div id="roomMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
 		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px"></div>
-		<input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/>
+		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
+		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.."></textarea>
 	</div>
 </div>
 
