@@ -200,8 +200,8 @@ $(function(){
 	
 	$(".cleditorMain iframe").contents().find('body').bind('keyup', function(e){
 		if (e.which == 13 ) {
-			var groupMsg = $(this).text();
-			$(this).text("");
+			var groupMsg = $(this).html();
+			$(this).html("");
 			
 			//iosocket.send(groupMsg);
 			
