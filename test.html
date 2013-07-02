@@ -10,8 +10,8 @@
 <script type="text/javascript" src="http://premiumsoftware.net/Content/cleditor/jquery.cleditor.min.js"></script>
 <style>
 	body {
-			//font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
-			//font-size: 62.5%;
+			font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+			font-size: 62.5%;
 	}
 	
 	#tabs { margin-top: 1em; }
@@ -67,7 +67,7 @@
 $(function(){
 		$("#userGroupMessage").cleditor({
         //width:        660, // width not including margins, borders or padding
-        height:       68, // height not including margins, borders or padding
+        height:       70, // height not including margins, borders or padding
         controls:     // controls to add to the toolbar
           "bold italic underline strikethrough | font size " +
           "style | color highlight removeformat " +
@@ -342,7 +342,7 @@ $(function(){
 	</div>
 	<div style="float:right;width:79%;height:630px;border:1px solid #ffcc00">
 		<div id="roomMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
-		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px"></div>
+		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px;font-size:100%;"></div>
 		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
 		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.. " style="width:99%"></textarea>
 	</div>
