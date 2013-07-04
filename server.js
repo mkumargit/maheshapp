@@ -163,7 +163,7 @@ var onlineClients = {};
 			});
 			
 			io.sockets.in(userRoom).emit('allUsers', nicknames);
-			io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
+			//io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
 		
 	   });
 	   
