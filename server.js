@@ -8,8 +8,8 @@ var io = require('socket.io').listen(http);
 var fs = require("fs");
 
 var port = process.env.PORT || 5000;
-
 http.listen(port);
+
 //http.listen('8888');
 
 var onlineClients = {};
@@ -145,31 +145,41 @@ var onlineClients = {};
 			
 	    });
 		
-	}
-	
-	function onDisconnect(socket) {
-		//Find all the rooms which this socket was part of
-		var rooms = io.sockets.manager.roomClients[socket.id];
-		var userNickname = "";
-		rooms.forEach(function (userRoom) {
-			var nicknames="";
-			io.sockets.clients(userRoom).forEach(function (socket) {
-				socket.get('nickname', function(err, nickname) {
-					if(nicknames==null || nicknames=="") 
-						nicknames= nickname+',';
-					else 
-						nicknames += nickname+',';
-				})
-			});
+		socket.on('disconnect', function () {
+			console.log('in disconnect ');
+			var userNickname;
+			var userRooms = io.sockets.manager.roomClients[socket.id];
+			for(var key in onlineClients){
+				if(onlineClients[key] == socket.id){
+					userNickname = key;
+					break;
+				}	
+			}
 			
-			io.sockets.in(userRoom).emit('allUsers', nicknames);
-			//io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
+			for(var userRoom in userRooms){
+				userRoom = userRoom.replace('/','');
+				socket.leave(userRoom);
+				if(userRoom != null && userRoom != ""){
+					var nicknames="";
+					io.sockets.clients(userRoom).forEach(function (socket) {
+						socket.get('nickname', function(err, nickname) {
+							if(nicknames==null || nicknames=="") 
+								nicknames= nickname+',';
+							else 
+								nicknames += nickname+',';
+						})
+					});
+					
+					console.log('userRoom is '+userRoom);
+					io.sockets.in(userRoom).emit('allUsers', nicknames);
+					io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
+			    }
+			}
+			
+		});
 		
-	   });
-	   
 	}
 	
 	//var server = http.createServer(onRequest).listen('8888');
 	io.sockets.on('connection', onConnected);
-	io.sockets.on('disconnect', onDisconnect);
 	
