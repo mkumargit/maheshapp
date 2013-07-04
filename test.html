@@ -124,7 +124,7 @@ $(function(){
 	iosocket.on('connect', function () {
 		
 		iosocket.on('allRooms', function(rooms) {
-			var existingRooms = "<option value=''>--None--</option>";
+			var existingRooms = "<option value=''>--Select--</option>";
 			if(rooms != null && rooms != ""){
 				var roomsList = (String(rooms).replace(/\//g,'')).split(',');
 				for(var i=0;i<roomsList.length;i++){
