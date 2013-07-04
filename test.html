@@ -132,8 +132,16 @@ $(function(){
 						existingRooms += '<option value="' + roomsList[i]+ '">' +roomsList[i]+ '</option>';
 					}
 				}
+			    $('#existingRoomName').html(existingRooms);
+				$('#noRoomsBlock').hide();
+				$('#roomsBlock').show();
+				
 			}
-			$('#existingRoomName').html(existingRooms);
+			else {
+				$('#roomsBlock').hide();
+				$('#noRoomsBlock').show();
+			}
+			
 			$('#joining_dialog').dialog('open');
 			
 		});
@@ -237,7 +245,7 @@ $(function(){
 		//after user has entered room name and nickname
 		$(document).bind('join', function (ev, data) {
 
-			if(data.existingRoomName != '')
+			if(data.existingRoomName != null && data.existingRoomName != '')
 				room = data.existingRoomName;
 			else
 				room = data.newRoomName;
@@ -406,10 +414,15 @@ $(function(){
 
 <!-- Enter room dialog -->
 <div id='joining_dialog' class='hidden' style='left:5%'>
-	  
+
+<span id='roomsBlock'>	  
 <label style='font-weight:bold'>Choose from Existing Rooms:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
 	<Select id='existingRoomName'></select><br/><br/>
 	<center> <b> OR </b></center><br/>
+</span>
+<span id='noRoomsBlock'>	  
+<label style='font-weight:bold'>No rooms exist as of now. Why don't you create your own!</label><br/><br/>
+</span>
 <label style='font-weight:bold'>Enter new Room name:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='newRoomName'><br/><br/><br/>
 <label id='joiningHandleLabel' style='font-weight:bold'>Enter your Login Handle:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningHandle'>
 </div>
