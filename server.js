@@ -147,6 +147,29 @@ var onlineClients = {};
 		
 	}
 	
+	function onDisconnect(socket) {
+		//Find all the rooms which this socket was part of
+		var rooms = io.sockets.manager.roomClients[socket.id];
+		var userNickname = "";
+		rooms.forEach(function (userRoom) {
+			var nicknames="";
+			io.sockets.clients(userRoom).forEach(function (socket) {
+				socket.get('nickname', function(err, nickname) {
+					if(nicknames==null || nicknames=="") 
+						nicknames= nickname+',';
+					else 
+						nicknames += nickname+',';
+				})
+			});
+			
+			io.sockets.in(userRoom).emit('allUsers', nicknames);
+			io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
+		
+	   });
+	   
+	}
+	
 	//var server = http.createServer(onRequest).listen('8888');
 	io.sockets.on('connection', onConnected);
+	io.sockets.on('disconnect', onDisconnect);
 	
