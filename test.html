@@ -54,13 +54,33 @@
 		background-color: black;
 	}
 	
-	div.chat-menu {position:fixed;background:white;border:1px solid #ffcc00;width:50%;height:630px;bottom:20%;right:25%;left:25%;top:20%;}
+	//div.chat-menu {position:fixed;background:white;border:1px solid #ffcc00;width:50%;height:630px;bottom:20%;right:40%;left:10%;top:10%;}
+	div.chat-menu {background:white;border:1px solid #ffcc00;width:70%;height:630px;bottom:20%;right:40%;left:10%;top:10%;}
 	span.loggedIn {color:black;font-size:13px;padding-left:5px}
-	span.loggedInUser {color:blue;font-size:13px;padding-left:5px}
+	span.loggedInUser {font-weight:bold;font-size:13px;padding-left:5px}
 	span.loggedIn_hover {color:black;font-size:13px;padding-left:5px;cursor:pointer}
 		
 	.hidden {
 		display: none
+	}
+	.ui-tabs .ui-tabs-nav
+	{
+		background: #616D7E;
+	}
+
+	.ui-tabs .ui-tabs-panel /* just in case you want to change the panel */
+	{
+		//background: #616D7E;
+		background: #F2F2F2;
+		border-width: 1px;
+	}
+	.chat-menu
+	{
+		border-radius:5px;-moz-border-radius:5px;
+	}
+	.chat-div
+	{
+		border-radius:5px;-moz-border-radius:5px;
 	}
 </style>	
 <script>
@@ -100,23 +120,48 @@ $(function(){
     });
 	
 	var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
-	var room="";
+	//var iosocket = io.connect("http://localhost");
+	var prevRoom = ""
+	var room ="";
 	var nickname = "";
 
 	iosocket.on('connect', function () {
+		
+		iosocket.on('allRooms', function(rooms) {
+			var existingRooms = "<option value=''>--None--</option>";
+			if(rooms != null && rooms != ""){
+				var roomsList = (String(rooms).replace(/\//g,'')).split(',');
+				for(var i=0;i<roomsList.length;i++){
+					if(roomsList[i] != ""){
+						existingRooms += '<option value="' + roomsList[i]+ '">' +roomsList[i]+ '</option>';
+					}
+				}
+			}
+			$('#existingRoomName').html(existingRooms);
+			$('#joining_dialog').dialog('open');
+			
+		});
 		
 		iosocket.on('message', function(message) {
 
 		});
 		
-		iosocket.on('privateMessage', function(message) {
+		iosocket.on('privateMessage', function(from, message) {
+			if ($('#'+from).length == false){
+				addTab(from);
+			}
+			var msgArea = $('#'+from).closest("div").find(".msgBlock");
+			var currVal = $(msgArea).val();
+			var chatMsg  = message;
+			$(msgArea).append(chatMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 			
 		});
 		
 		iosocket.on('publicMessage', function(message) {
 			var msgArea = $("#chatMessages");
-			var chatMsg  = '<br/>'+message+'<br/>';
-			$(msgArea).append(chatMsg);
+			var chatMsg  = '<br/>'+message+'';
+			$(msgArea).append(message);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		});
 		
@@ -139,16 +184,21 @@ $(function(){
 		
 		iosocket.on('joinRoom', function(user) {
 			var msgArea = $("#chatMessages");
-			var chatMsg  = '<br/>'+user+': has joined the room<br/>';
-			$(msgArea).append(chatMsg);
+			var joiningMsg;
+			if(user == nickname)
+				joiningMsg  = '<br/> You have joined the room <b>'+room+'</b><br/>';
+			else
+				joiningMsg  = '<br/>'+user+': has joined the room<br/>';
+			$(msgArea).append(joiningMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		});
 		
-		iosocket.on('unJoinRoom', function(user) {
-			$("#"+user+"_loggedIn").remove();
+		iosocket.on('unjoinRoom', function(user) {
+			console.log('in unjoin user is '+user);
+			//$("#"+user+"_loggedIn").remove();
 			var msgArea = $("#chatMessages");
-			var chatMsg  = '<br/>'+user+': has left the room<br/>';
-			$(msgArea).append(chatMsg);
+			var	unjoiningMsg  = '<br/>'+user+': has left the room<br/>';
+			$(msgArea).append(unjoiningMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		})
 		
@@ -166,15 +216,18 @@ $(function(){
 			autoOpen: false,
 			draggable: false,
 			modal: true,
+			width:400,
 			title: 'Enter Room name and Handle',
 			buttons: {
 				"Ok": function () {
 					$(document).trigger('join', {
-						joiningRoomName: $('#joiningRoomName').val(),
+						existingRoomName: $('#existingRoomName').val(),
+						newRoomName: $('#newRoomName').val(),
 						joiningHandle: $('#joiningHandle').val()
 					});
 
-					$('#joiningRoomName').val('');
+					$('#existingRoomName').val('');
+					$('#newRoomName').val('');
 					$('#joiningHandle').val('');
 					
 					$(this).dialog('close');
@@ -182,34 +235,35 @@ $(function(){
 			}
 		});
 		
-		$('#joining_dialog').dialog('open');
+		//$('#joining_dialog').dialog('open');
+		iosocket.emit('getRooms');
 		
 		//after user has entered room name and nickname
 		$(document).bind('join', function (ev, data) {
+
+			if(data.existingRoomName != '')
+				room = data.existingRoomName;
+			else
+				room = data.newRoomName;
+			if(nickname ==null || nickname == "")
+				nickname = data.joiningHandle;
 			
-			room = data.joiningRoomName;
-			nickname = data.joiningHandle;
+			if(prevRoom != "" && prevRoom != room) {
+				iosocket.emit('unjoinRoom', {room : prevRoom, nickname : nickname});
+				var msgArea = $("#chatMessages");
+				unjoiningMsg  = '<br/> You have left the room <b>'+prevRoom+'</b><br/>';
+				$(msgArea).append(unjoiningMsg);
+			}
 			
 			iosocket.emit('joinRoom', {room : room, nickname : nickname});
 			
-			$("#roomMessageHeader").html("<center> Welcome to <b>"+room+"</b>");
+			$("#roomMessageHeader").html("<div style='width:100%'><div style='width:70%;font-weight:bold;float:left'><center>"+room+"</center></div><div style='width:30%;float:right'><a href='javascript:void(0)' id='changeRoom' style='color:white;vertical-align:top;float:right;margin-right:5%'>Change Room</a></div></div> ");
 			
 		})
 		
 	});//end of io.connect
 	
-	$(".cleditorMain iframe").contents().find('body').bind('keyup', function(e){
-		if (e.which == 13 ) {
-			var groupMsg = $(this).html();
-			$(this).html("");
-			
-			//iosocket.send(groupMsg);
-			
-			iosocket.emit('publicMessage', {room : room, message : groupMsg});
-				
-        }
-	})
-	
+
 	$(".loggedIn").live("mouseenter",function(){
            $(this).removeClass("loggedIn").addClass("loggedIn_hover");
     })
@@ -223,10 +277,23 @@ $(function(){
 		addTab($(this).html());
 	})
 	
+	//Called when user send message to whole group
+	$(".cleditorMain iframe").contents().find('body').bind('keyup', function(e){
+		if (e.which == 13 ) {
+			var groupMsg = $(this).html();
+			$(this).html("");
+			
+			//iosocket.send(groupMsg);
+			iosocket.emit('publicMessage', {room : room, message : groupMsg});
+				
+        }
+	})
+	
 	 //called when user presses enter key to send message from chat window
 	  $(".newText").live("keypress",function(e){
          if (e.which == 13 ) {
             sendMsg(this);
+			$(this).html("");
           }
       })
 	
@@ -234,7 +301,7 @@ $(function(){
 	
     var tabTitle = $( "#tab_title" ),
     tabContent = $( "#tab_content" ),
-    tabTemplate = "<li><a href='#{href}'><img src='icons/offline.png' height='6px' width='6px'/>&nbsp;#{label}</a><span class='ui-icon ui-icon-close'>Remove Tab</span></li>",
+    tabTemplate = "<li><a href='#{href}'>&nbsp;#{label}</a><span class='ui-icon ui-icon-close'>Remove Tab</span></li>",
     tabCounter = 0;
  
     var tabs = $( "#tabs" ).tabs();
@@ -251,7 +318,7 @@ $(function(){
 	}
 	// addTab function: adds new tab using the input from the form above
 	function addTab(targetUser) {
-		var tabContentHtml= '<div class="msgBlock"></div><input type="textbox" class="newText" placeholder="Type here.." size="30"/>';
+		var tabContentHtml= '<div class="msgBlock" style="background-color:white;"></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
 		var tabLabel = targetUser;
 		var label = tabLabel,
 			id = targetUser,
@@ -281,7 +348,7 @@ $(function(){
 		
 	}//end of addTab
 	
-		  // sends chat message to another user
+	  // sends chat message to another user
 	  sendMsg = function(msgInputElem){
 		var targetUser = $(msgInputElem).closest("div").attr("id");
 		var parentdivId = "#"+targetUser;
@@ -295,12 +362,13 @@ $(function(){
 			
 		var currVal = $(msgArea).val();
 		var currTime = new Date();
-		var chatMsg  = '<br/><span style="color:gray">'+username+' ['+currTime.getHours()+':'+currTime.getMinutes()+']:</span><br/>'+msgInput;
-		$(msgArea).append(chatMsg);
+		var chatMsgSelf  = '<br/>&nbsp;<span style="color:gray">Me ['+currTime.getHours()+':'+currTime.getMinutes()+']:</span><br/>&nbsp;'+msgInput+'<br/>';
+		var chatMsg  = '<br/>&nbsp;<span style="color:gray">'+nickname+' ['+currTime.getHours()+':'+currTime.getMinutes()+']:</span><br/>&nbsp;'+msgInput+'<br/>';
+		$(msgArea).append(chatMsgSelf);
 		$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		$(msgInputElem).val("");
 		
-		iosocket.emit('privateMessage', {user : targetUser, message : msgInput});
+		iosocket.emit('privateMessage', targetUser, nickname, chatMsg);
 	  }
 	  
 	// close icon: removing the tab on click
@@ -322,6 +390,18 @@ $(function(){
 		$(rosterImg).attr("src",imgSrc);
 	});
 	
+	$( "#changeRoom" ).live( "click", function() {
+	
+		prevRoom = room;
+		
+		$('#joiningHandleLabel').hide();
+		$('#joiningHandle').hide();
+		
+		iosocket.emit('getRooms');
+		
+	})
+	
+	
   });//end of $(function
   
 </script>
@@ -329,27 +409,32 @@ $(function(){
 <body>
 
 <!-- Enter room dialog -->
-<div id='joining_dialog' class='hidden'>
-      <label>Room:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningRoomName' value='room'><br/><br/>
-      <label>Handle:&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningHandle'>
+<div id='joining_dialog' class='hidden' style='left:5%'>
+	  
+<label style='font-weight:bold'>Choose from Existing Rooms:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+	<Select id='existingRoomName'></select><br/><br/>
+	<center> <b> OR </b></center><br/>
+<label style='font-weight:bold'>Enter new Room name:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='newRoomName'><br/><br/><br/>
+<label id='joiningHandleLabel' style='font-weight:bold'>Enter your Login Handle:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningHandle'>
 </div>
 
 <!-- Show Group Client -->
 <div id="displaydiv" class="chat-menu">
-	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #ffcc00">
+	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #ffcc00" class="chat-div">
 		<div id="usersMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
-		<div id="loggedInUsers"></div>
+		<div id="loggedInUsers" style="font-size:medium;"></div>
 	</div>
-	<div style="float:right;width:79%;height:630px;border:1px solid #ffcc00">
-		<div id="roomMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
-		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px;font-size: 100%;"></div>
+	<div style="float:right;width:79%;height:630px;border:1px solid #ffcc00" class="chat-div">
+		<div id="roomMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
+		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px;font-size:medium;" ></div>
 		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
 		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.. " style="width:99%"></textarea>
 	</div>
 </div>
 
 <!-- User chat tabs -->
-<div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom">
+<!--div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom" -->
+<div id="tabs" style="position:fixed;width:35%;bottom:0;right:0;left:65%;display:none;border:1px solid #ffcc00;" class="tabs-bottom">
     <ul></ul>
 	<div class="tabs-spacer"></div>
 </div>
