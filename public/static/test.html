@@ -15,7 +15,7 @@
 			font-size: 62.5%;
 	}
 	
-	#tabs { margin-top: 1em; }
+	 #tabs { margin-top: 1em; }
     #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
 	.activeLoginClass { cursor: pointer; }
 	div { 
@@ -28,7 +28,7 @@
     .tabs-bottom .ui-tabs-nav li { top: auto; bottom: 0; margin: 0 .2em 1px 0; border-bottom: auto; border-top: 0; }
     .tabs-bottom .ui-tabs-nav li.ui-tabs-active { margin-top: -1px; padding-top: 1px; }
 	
-	div.floating-menu {position:fixed;background:#D0D0D0;border:1px solid #ffcc00;width:200px;z-index:100;bottom: 0;right:0}
+	div.floating-menu {position:fixed;background:#D0D0D0;border:1px solid #1797C0;width:200px;z-index:100;bottom: 0;right:0}
 	div.floating-menu a, div.floating-menu h3 {display:block;margin:0 0.5em;}
 	.ui-tabs-panel {
     padding: 0em 0.4em;
@@ -55,8 +55,8 @@
 		background-color: black;
 	}
 	
-	//div.chat-menu {position:fixed;background:white;border:1px solid #ffcc00;width:50%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
-	div.chat-menu {background:white;border:1px solid #ffcc00;width:70%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
+	//div.chat-menu {position:fixed;background:white;border:1px solid #1797C0;width:50%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
+	div.chat-menu {background:white;border:1px solid #1797C0;width:70%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
 	span.loggedIn {color:black;font-size:13px;padding-left:5px}
 	span.loggedInUser {font-weight:bold;font-size:13px;padding-left:5px}
 	span.loggedIn_hover {color:black;font-size:13px;padding-left:5px;cursor:pointer}
@@ -66,15 +66,17 @@
 	}
 	.ui-tabs .ui-tabs-nav
 	{
-		background: #616D7E;
+		background: #1797C0;
 	}
 
 	.ui-tabs .ui-tabs-panel /* just in case you want to change the panel */
 	{
-		//background: #616D7E;
-		background: #F2F2F2;
-		border-width: 1px;
+		//background: #1797C0;
+		//background: #F2F2F2;
+		padding: 1em 0em 0.5em 0.5em;
+		//border-width: 1px;
 	}
+
 	.chat-div
 	{
 		border-radius:5px;-moz-border-radius:5px;
@@ -436,13 +438,13 @@ $(function(){
 
 <!-- Show Group Client -->
 <div id="displaydiv" class="chat-menu">
-	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #ffcc00" class="chat-div">
-		<div id="usersMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px"></div>
+	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #1797C0" class="chat-div">
+		<div id="usersMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px"></div>
 		<div id="loggedInUsers" style="font-size:medium;"></div>
 	</div>
-	<div style="float:right;width:79%;height:630px;border:1px solid #ffcc00" class="chat-div">
-		<div id="roomMessageHeader" style="font-size:14pt;background-color:#616D7E;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
-		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #ffcc00;padding-left:5px;font-size:medium;" ></div>
+	<div style="float:right;width:79%;height:630px;border:1px solid #1797C0" class="chat-div">
+		<div id="roomMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
+		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #1797C0;padding-left:5px;font-size:medium;" ></div>
 		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
 		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.. " style="width:99%"></textarea>
 	</div>
@@ -450,7 +452,7 @@ $(function(){
 
 <!-- User chat tabs -->
 <!--div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom" -->
-<div id="tabs" style="position:fixed;width:35%;bottom:0;right:0;left:65%;display:none;border:1px solid #ffcc00;" class="tabs-bottom">
+<div id="tabs" style="position:fixed;width:35%;bottom:0;right:0;left:65%;display:none;border:1px solid #1797C0;" class="tabs-bottom">
     <ul></ul>
 	<div class="tabs-spacer"></div>
 </div>
