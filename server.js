@@ -1,34 +1,31 @@
-var router = require('./router');
-var requestHandlers = require("./requestHandlers");
-
-var http = require('http').createServer(onRequest);
-var url = require('url');
-var io = require('socket.io').listen(http);
-
-var fs = require("fs");
+//var http = require('http').createServer(onRequest);
+var express = require('express'),
+	app = express(),
+	http = require('http'),
+	server = http.createServer(app),
+	url = require('url'),
+	io = require('socket.io').listen(server),
+	fs = require("fs"),
+	requestHandlers = require("./requestHandlers");
 
 var port = process.env.PORT || 5000;
-http.listen(port);
 
-//http.listen('8888');
+//server.listen('8888');
+server.listen(port);
+
+app.configure(function(){
+    //app.set("view options", { layout: false, pretty: true });
+    app.use(express.favicon());
+    app.use(express.static(__dirname + '/public'));
+    }
+);
 
 var onlineClients = {};
 
-	function onRequest(request,response) {
-	
+	app.get('/', function(req,res) {
 		console.log('node.js server started and is listening at 8888 port ...');
-
-		var handle = {}
-		handle["/"] = requestHandlers.start;
-		handle["/start"] = requestHandlers.start;
-		handle["/upload"] = requestHandlers.upload;
-		handle["/show"] = requestHandlers.show;
-		handle["/transfer"] = requestHandlers.transfer;
-
-		var pathname = url.parse(request.url).pathname;
-		
-		router.route(handle,pathname,response,request,io); //send request directly to router.js
-	}
+		requestHandlers.start(res,req,io); //send request directly to router.js
+	})
 	
 	function onConnected(socket) {
 		
