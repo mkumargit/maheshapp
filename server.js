@@ -23,7 +23,7 @@ app.configure(function(){
 var onlineClients = {};
 
 	app.get('/', function(req,res) {
-		console.log('node.js server started and is listening at 8888 port ...');
+		console.log('node.js server started...');
 		requestHandlers.start(res,req,io); //send request directly to router.js
 	})
 	
