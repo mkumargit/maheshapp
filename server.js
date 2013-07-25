@@ -175,6 +175,12 @@ var onlineClients = {};
 			
 		});
 		
+		socket.on('binaryMsg', function (to, from, bMsg) {
+			var id = onlineClients[to];
+			io.sockets.socket(id).emit('binaryMessage',from, bMsg);
+		})
+		
+		
 	}
 	
 	//var server = http.createServer(onRequest).listen('8888');

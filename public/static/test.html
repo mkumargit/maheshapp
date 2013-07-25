@@ -23,18 +23,19 @@
 		resize:none;
 	}
 	/* force a height so the tabs don't jump as content height changes */
-    #tabs .tabs-spacer { float: left; height: 200px; }
+    /*#tabs .tabs-spacer { float: left; height: 200px; }*/
     .tabs-bottom .ui-tabs-nav { clear: left; padding: 0 .2em .2em .2em; }
     .tabs-bottom .ui-tabs-nav li { top: auto; bottom: 0; margin: 0 .2em 1px 0; border-bottom: auto; border-top: 0; }
     .tabs-bottom .ui-tabs-nav li.ui-tabs-active { margin-top: -1px; padding-top: 1px; }
 	
-	div.floating-menu {position:fixed;background:#D0D0D0;border:1px solid #1797C0;width:200px;z-index:100;bottom: 0;right:0}
+	div.floating-menu {position:fixed;background:#D0D0D0;border:1px solid #1797C0;z-index:100;bottom: 0;right:0}
 	div.floating-menu a, div.floating-menu h3 {display:block;margin:0 0.5em;}
+	
 	.ui-tabs-panel {
     padding: 0em 0.4em;
 	}
 	.msgBlock{
-        height:170px;
+        height:190px;
         overflow:auto;
     }
 	.roster {
@@ -123,6 +124,7 @@ $(function(){
 	var prevRoom = ""
 	var room ="";
 	var nickname = "";
+	var video;
 
 	iosocket.on('connect', function () {
 		
@@ -143,6 +145,7 @@ $(function(){
 			else {
 				$('#roomsBlock').hide();
 				$('#noRoomsBlock').show();
+				$('#newRoomName').val('room');
 			}
 			
 			if($.cookie("nickname")!=null && $.cookie("nickname")!='undefined')
@@ -221,6 +224,34 @@ $(function(){
 			$(msgArea).append(chatMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		});
+		
+		iosocket.on('picShareReq', function(from){
+			
+		})
+		iosocket.on('binaryMessage', function(from, bData) {
+			if ($('#'+from).length == false){
+				addTab(from);
+			}
+			var mediaArea = $('#'+from).closest("div").find(".MediaBlock");
+			if ($(mediaArea).length == false){
+				var msgAndMediaDiv = $('#'+from).closest("div").find(".msgAndMediaBlock");
+				var msgDiv = $(msgAndMediaDiv).find(".msgBlock");
+				$("#tabs").css('width','50%');
+				$(msgDiv).css('width','50%');
+				$(msgAndMediaDiv).append('<div class = "MediaBlock" style="float:right;width:50%">Image Recieved<img height="190px" width="100%" src = "'+bData+'" /><div>');
+				
+			}
+			else{
+				$('#'+from).closest("div").find(".MediaBlock").find("img").attr("src",bData);
+			}
+			
+			var currVal = $(msgArea).val();
+			var chatMsg  = message;
+			$(msgArea).append(chatMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+			
+		});
+		
 		
 		
 		
@@ -317,7 +348,11 @@ $(function(){
     tabTemplate = "<li><a href='#{href}'>&nbsp;#{label}</a><span class='ui-icon ui-icon-close'>Remove Tab</span></li>",
     tabCounter = 0;
  
-    var tabs = $( "#tabs" ).tabs();
+    var tabs = 
+	$( "#tabs" ).tabs({
+      collapsible: true
+    });
+	//$( "#tabs" ).tabs();
 		
 	function moveToBottom(){
 		// fix the classes
@@ -331,7 +366,7 @@ $(function(){
 	}
 	// addTab function: adds new tab using the input from the form above
 	function addTab(targetUser) {
-		var tabContentHtml= '<div class="msgBlock" style="background-color:white;"></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
+		var tabContentHtml= '<div class="msgBlockHeader" style="height:20px;background-color:white"><a href="javascript:void(0)" class="startCam" style="vertical-align:top;float:right;margin-right:5%">Start My Cam</a></div><hr/><div class = "msgAndMediaBlock" style="width:100%;height:190px;background-color:white;"><div class="msgBlock" style="float:left;width:100%"></div></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
 		var tabLabel = targetUser;
 		var label = tabLabel,
 			id = targetUser,
@@ -414,15 +449,86 @@ $(function(){
 		
 	})
 	
+	$( ".startCam" ).live( "click", function() {
+		var targetUser = $(this).closest("div").parent().attr("id");
+		var parentdivId = "#"+targetUser;
+		var msgAndMediaDiv = $(parentdivId).find(".msgAndMediaBlock");
+		var msgDiv = $(msgAndMediaDiv).find(".msgBlock");
+		$("#tabs").css('width','50%');
+		$(msgDiv).css('width','50%');
+		$(msgAndMediaDiv).append('<div class = "MediaBlock" style="float:right;width:50%"><a href="javascript:void(0)" class="sendCamImage" style="vertical-align:top;float:right;margin-right:5%">Send Image from Cam</a><video autoplay height = "190" width ="100%" id="webCamVideo"></video><div>');
+		
+		var webCamStream;
+		video = document.getElementById('webCamVideo');
+		window.URL = window.URL || window.webkitURL;
+		navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+								  navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+		if (navigator.getUserMedia) {
+		  navigator.getUserMedia({audio: true, video: true}, function(stream) {
+			$(video).attr('src' ,window.URL.createObjectURL(stream));
+			webCamStream=stream;
+			//audio.src = window.URL.createObjectURL(stream);
+		  }, onVideoFail);
+		} 
+		else {
+		   $(video).attr('src','somevideo.webm'); // fallback.
+		}
+	
+	})
+	
+	function onVideoFail(code){
+		console.log('failed');
+	}
+	
+	$( ".sendCamImage" ).live("click", function(){
+		var targetUser = $(this).closest("div").parent().parent().attr("id");
+		var canvas = document.getElementById('myCanvas');
+		context = canvas.getContext('2d');
+		context.drawImage(video, 0, 0, canvas.width, canvas.height);
+		iosocket.emit('binaryMsg', targetUser, nickname, canvas.toDataURL('image/webp'));
+		
+	})
+	
 	
   });//end of $(function
-  
+
+/*
+<canvas id="canvas" width="500px" height="300px"></canvas>
+<input type="file" id="file-input">
+<script>
+$(function() {
+    $('#file-input').change(function(e) {
+        var file = e.target.files[0],
+            imageType = /image.*/;
+		/*
+        if (!file.type.match(imageType))
+            return;
+
+        var reader = new FileReader();
+        reader.onload = fileOnload;
+        reader.readAsDataURL(file);        
+    });
+
+    function fileOnload(e) {
+        var $img = $('<img>', { src: e.target.result });
+        var canvas = $('#canvas')[0];
+        var context = canvas.getContext('2d');
+
+        $img.load(function() {
+            context.drawImage(this, 0, 0);
+        });
+    }
+}); */
+</script>  
 </script>
 </head>
 <body>
 
 <!-- Enter room dialog -->
 <div id='joining_dialog' class='hidden' style='left:5%'>
+
+<canvas id="myCanvas" width="320" height="240" style="display: none"></canvas>
 
 <span id='roomsBlock'>	  
 <label style='font-weight:bold'>Choose from Existing Rooms:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
@@ -452,7 +558,7 @@ $(function(){
 
 <!-- User chat tabs -->
 <!--div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom" -->
-<div id="tabs" style="position:fixed;width:35%;bottom:0;right:0;left:65%;display:none;border:1px solid #1797C0;" class="tabs-bottom">
+<div id="tabs" style="position:fixed;width:35%;bottom:0;right:65%;left:0;display:none;border:1px solid #1797C0;" class="tabs-bottom floating-menu">
     <ul></ul>
 	<div class="tabs-spacer"></div>
 </div>
