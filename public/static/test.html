@@ -229,6 +229,8 @@ $(function(){
 			
 		})
 		iosocket.on('binaryMessage', function(from, bData) {
+			console.log('bData recieved is ');
+			console.log(bData);
 			if ($('#'+from).length == false){
 				addTab(from);
 			}
@@ -486,6 +488,8 @@ $(function(){
 		var canvas = document.getElementById('myCanvas');
 		context = canvas.getContext('2d');
 		context.drawImage(video, 0, 0, canvas.width, canvas.height);
+		console.log('bData sent is ');
+		console.log(canvas.toDataURL('image/webp'));
 		iosocket.emit('binaryMsg', targetUser, nickname, canvas.toDataURL('image/webp'));
 		
 	})
