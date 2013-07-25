@@ -125,6 +125,7 @@ $(function(){
 	var room ="";
 	var nickname = "";
 	var video;
+	var webCamStream;
 
 	iosocket.on('connect', function () {
 		
@@ -458,9 +459,8 @@ $(function(){
 		var msgDiv = $(msgAndMediaDiv).find(".msgBlock");
 		$("#tabs").css('width','50%');
 		$(msgDiv).css('width','50%');
-		$(msgAndMediaDiv).append('<div class = "MediaBlock" style="float:right;width:50%"><a href="javascript:void(0)" class="sendCamImage" style="vertical-align:top;float:right;margin-right:5%">Send Image from Cam</a><video autoplay height = "190" width ="100%" id="webCamVideo"></video><div>');
+		$(msgAndMediaDiv).append('<div class = "mediaBlock" style="float:right;width:50%"><a href="javascript:void(0)" class="stopCam" style="vertical-align:top;float:right;margin-right:5%">Stop Cam</a><a href="javascript:void(0)" class="sendCamImage" style="vertical-align:top;float:right;margin-right:5%">Send Image from Cam</a><video autoplay height = "190" width ="100%" id="webCamVideo"></video><div>');
 		
-		var webCamStream;
 		video = document.getElementById('webCamVideo');
 		window.URL = window.URL || window.webkitURL;
 		navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
@@ -491,6 +491,15 @@ $(function(){
 		console.log('bData sent is ');
 		console.log(canvas.toDataURL('image/png'));
 		iosocket.emit('binaryMsg', targetUser, nickname, canvas.toDataURL('image/png'));
+		
+	})
+	
+	$( ".stopCam" ).live("click", function() {
+		webCamStream.stop();
+		var msgAndMediaDiv = $(this).closest("div").parent();
+		$(msgAndMediaDiv).children('.mediaBlock').remove();
+		$(msgDiv).css('width','100%');
+		
 		
 	})
 	
