@@ -489,8 +489,8 @@ $(function(){
 		context = canvas.getContext('2d');
 		context.drawImage(video, 0, 0, canvas.width, canvas.height);
 		console.log('bData sent is ');
-		console.log(canvas.toDataURL('image/webp'));
-		iosocket.emit('binaryMsg', targetUser, nickname, canvas.toDataURL('image/webp'));
+		console.log(canvas.toDataURL('image/png'));
+		iosocket.emit('binaryMsg', targetUser, nickname, canvas.toDataURL('image/png'));
 		
 	})
 	
