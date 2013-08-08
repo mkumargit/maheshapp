@@ -1,0 +1,31 @@
+initiator:
+
+Join
+getusermedia
+when other user joins room - isChannelReady - true- recives message 'got user media'
+maybestart invoked
+createpeerconnection
+add localstream to peerconnection
+call- peerconnection createOffer
+
+handleRemoteStream
+
+
+
+joiner:
+
+join
+getusermedia
+when in room - send ur presence(so that isChannelReady is set on intiator side) and send message got usermedia
+recieve offer
+maybestart invoked
+createpeerconnection
+add localstream to peerconnection
+createAnswer
+
+handleRemoteStream
+
+
+
+
+maybestart 

@@ -120,8 +120,8 @@ var onlineClients = {};
 			io.sockets.socket(id).emit('privateMessage',from, msg);
 		});
 		
-		socket.on('message', function (msg) {
-			/*socket.get('nickname', function (err, name) {
+		/*socket.on('message', function (msg) {
+			socket.get('nickname', function (err, name) {
 				var userRoom,userMessage;
 				
 				//socket.broadcast.emit('message', msg);
@@ -136,11 +136,11 @@ var onlineClients = {};
 				console.log('Message broadcast to', userRoom);
 				console.log('Message is', userMessage);
 				socket.broadcast.to(userRoom).emit(userMessage);
-			});*/
+			});
 			
 			socket.emit('message', msg);
 			
-	    });
+	    });*/
 		
 		socket.on('disconnect', function () {
 			console.log('in disconnect ');
@@ -178,6 +178,39 @@ var onlineClients = {};
 		socket.on('binaryMsg', function (to, from, bMsg) {
 			var id = onlineClients[to];
 			io.sockets.socket(id).emit('binaryMessage',from, bMsg);
+		})
+		
+		
+		//webrtc functions
+		socket.on('message', function (message) {
+			console.log(message);
+			socket.broadcast.emit('message', message); // should be room only
+		});
+	
+		socket.on('create or join', function (room) {
+			var numClients = io.sockets.clients(room).length;
+
+			//console.log('Room ' + room + ' has ' + numClients + ' client(s)');
+			//console.log('Request to create or join room ' + room);
+
+			if (numClients == 0){
+				socket.join(room);
+				socket.emit('created', room);
+			} else if (numClients == 1) {
+				io.sockets.in(room).emit('join', room);
+				socket.join(room);
+				socket.emit('joined', room);
+			} else { // max two clients
+				socket.emit('full', room);
+			}
+			socket.emit('emit(): client ' + socket.id + ' joined room ' + room);
+			socket.broadcast.emit('broadcast(): client ' + socket.id + ' joined room ' + room);
+
+		});
+		
+		socket.on('camReq', function (to, from) {
+			var id = onlineClients[to];
+			io.sockets.socket(id).emit('camRequest',from);
 		})
 		
 		

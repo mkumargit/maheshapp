@@ -83,8 +83,328 @@
 		border-radius:5px;-moz-border-radius:5px;
 	}
 </style>	
+</head>
+<body>
+
+<!-- Enter room dialog -->
+<div id='joining_dialog' class='hidden' style='left:5%'>
+
+<canvas id="myCanvas" width="320" height="240" style="display: none"></canvas>
+
+<span id='roomsBlock'>	  
+<label style='font-weight:bold'>Choose from Existing Rooms:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+	<Select id='existingRoomName'></select><br/><br/>
+	<center> <b> OR </b></center><br/>
+</span>
+<span id='noRoomsBlock'>	  
+<label style='font-weight:bold'>No rooms exist as of now. Why don't you create your own!</label><br/><br/>
+</span>
+<label style='font-weight:bold'>Enter new Room name:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='newRoomName'><br/><br/><br/>
+<label id='joiningHandleLabel' style='font-weight:bold'>Enter your Login Handle:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningHandle'>
+</div>
+
+<!-- Show Group Client -->
+<div id="displaydiv" class="chat-menu">
+	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #1797C0" class="chat-div">
+		<div id="usersMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px"></div>
+		<div id="loggedInUsers" style="font-size:medium;"></div>
+	</div>
+	<div style="float:right;width:79%;height:630px;border:1px solid #1797C0" class="chat-div">
+		<div id="roomMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
+		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #1797C0;padding-left:5px;font-size:medium;" ></div>
+		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
+		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.. " style="width:99%"></textarea>
+	</div>
+</div>
+
+<!-- webrtc -->
+<div id='container'>
+  <div id='videos' style="padding-top:5px; padding-left:5px;">
+    <video id='localVideo' autoplay muted></video> &nbsp;&nbsp;
+    <video id='remoteVideo' autoplay></video>
+  </div>
+</div>
+
+<!-- User chat tabs -->
+<!--div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom" -->
+<div id="tabs" style="position:fixed;width:35%;bottom:0;left:65%;right:0;display:none;border:1px solid #1797C0;" class="tabs-bottom floating-menu">
+    <ul></ul>
+	<div class="tabs-spacer"></div>
+</div>
+
+</body>
+<footer>
+<script src="/javascripts/adapter.js"></script>
 <script>
+
 $(function(){
+		
+		var isChannelReady;
+		var isInitiator;
+		var isStarted = false;
+		var localStream;
+		var pc;
+		var remoteStream;
+		var turnReady;
+
+		var pc_config = webrtcDetectedBrowser === 'firefox' ?
+		  {'iceServers':[{'url':'stun:23.21.150.121'}]} : // number IP
+		  {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
+
+		var pc_constraints = {'optional': [{'DtlsSrtpKeyAgreement': true}]};
+
+		// Set up audio and video regardless of what devices are present.
+		var sdpConstraints = {'mandatory': {
+		  'OfferToReceiveAudio':true,
+		  'OfferToReceiveVideo':true }};
+
+		/////////////////////////////////////////////
+		
+		var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
+		//var iosocket = io.connect("http://localhost");
+
+
+		var localVideo = document.querySelector('#localVideo');
+		var remoteVideo = document.querySelector('#remoteVideo');
+
+		/*function handleUserMedia(stream) {
+		  localStream = stream;
+		  attachMediaStream(localVideo, stream);
+		  console.log('Adding local stream.');
+		  sendMessage('got user media');
+		  if (isInitiator) {
+			maybeStart();
+		  }
+		}*/
+
+		function handleUserMediaError(error){
+		  console.log('navigator.getUserMedia error: ', error);
+		}
+
+		var constraints = {video: true};
+
+		function maybeStart() {
+		  console.log(' is started is '+isStarted);
+		  console.log(' localStream is '+localStream);
+		  console.log(' isChannelReady is '+isChannelReady);
+		  if (!isStarted && localStream && isChannelReady) {
+			console.log('in maybestart method');
+			createPeerConnection();
+			pc.addStream(localStream);
+			isStarted = true;
+			if (isInitiator) {
+			  doCall();
+			}
+		  }
+		}
+
+		window.onbeforeunload = function(e){
+			sendMessage('bye');
+		}
+
+		/////////////////////////////////////////////////////////
+
+		function createPeerConnection() {
+		  try {
+			pc = new RTCPeerConnection(pc_config, pc_constraints);
+			pc.onicecandidate = handleIceCandidate;
+			console.log('Created RTCPeerConnnection with:\n' +
+			  '  config: \'' + JSON.stringify(pc_config) + '\';\n' +
+			  '  constraints: \'' + JSON.stringify(pc_constraints) + '\'.');
+		  } catch (e) {
+			console.log('Failed to create PeerConnection, exception: ' + e.message);
+			alert('Cannot create RTCPeerConnection object.');
+			  return;
+		  }
+		  pc.onaddstream = handleRemoteStreamAdded;
+		  pc.onremovestream = handleRemoteStreamRemoved;
+		}
+
+		function handleIceCandidate(event) {
+		  console.log('handleIceCandidate event: ', event);
+		  if (event.candidate) {
+			sendMessage({
+			  type: 'candidate',
+			  label: event.candidate.sdpMLineIndex,
+			  id: event.candidate.sdpMid,
+			  candidate: event.candidate.candidate});
+		  } else {
+			console.log('End of candidates.');
+		  }
+		}
+
+		function doCall() {
+		  var constraints = {'optional': [], 'mandatory': {'MozDontOfferDataChannel': true}};
+		  // temporary measure to remove Moz* constraints in Chrome
+		  if (webrtcDetectedBrowser === 'chrome') {
+			for (var prop in constraints.mandatory) {
+			  if (prop.indexOf('Moz') !== -1) {
+				delete constraints.mandatory[prop];
+			  }
+			 }
+		   }
+		  constraints = mergeConstraints(constraints, sdpConstraints);
+		  console.log('Sending offer to peer, with constraints: \n' +
+			'  \'' + JSON.stringify(constraints) + '\'.');
+		  pc.createOffer(setLocalAndSendMessage, null, constraints);
+		}
+
+		function doAnswer() {
+		  console.log('Sending answer to peer.');
+		  pc.createAnswer(setLocalAndSendMessage, null, sdpConstraints);
+		}
+
+		function mergeConstraints(cons1, cons2) {
+		  var merged = cons1;
+		  for (var name in cons2.mandatory) {
+			merged.mandatory[name] = cons2.mandatory[name];
+		  }
+		  merged.optional.concat(cons2.optional);
+		  return merged;
+		}
+
+		function setLocalAndSendMessage(sessionDescription) {
+		  // Set Opus as the preferred codec in SDP if Opus is present.
+		  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+		  pc.setLocalDescription(sessionDescription);
+		  sendMessage(sessionDescription);
+		}
+
+		function handleRemoteStreamAdded(event) {
+		  console.log('Remote stream added.');
+		 // reattachMediaStream(miniVideo, localVideo);
+		 attachMediaStream(localVideo, localStream);
+		 attachMediaStream(remoteVideo, event.stream);
+		 remoteStream = event.stream;
+		 //createNewVideoWindow();
+		//  waitForRemoteVideo();
+		}
+		
+		function createNewVideoWindow(){
+		
+			var childW = window.open('','','width=1500,height=400');
+			childW.document.open();
+			childW.document.write('<HTML><HEAD><META http-equiv="Content-type" content="text/html; charset=iso-8859-2">');
+			childW.document.write('</HEAD><BODY BGCOLOR="#f7f3e7">');
+			childW.document.write('<video autoplay height = "190" width ="100%" id="localVideo"></video>');
+			childW.document.write('<video autoplay height = "190" width ="100%" id="remoteVideo"></video>');
+			childW.document.write('</BODY></HTML>');
+			childW.document.close();
+
+			var h = childW.document.getElementsByTagName("head")[0];
+			var jqueryjs = childW.document.createElement("script");
+			jqueryjs.type = "text/javascript";
+			jqueryjs.src = "http://code.jquery.com/jquery-1.8.2.js";
+			
+			var js = childW.document.createElement("script");
+			js.type = "text/javascript";
+			var scripText = 'var localVid = document.getElementById("localVideo");var remoteVid = document.getElementById("remoteVideo");window.URL = window.URL || window.webkitURL; $(localVid).attr("src" ,window.URL.createObjectURL(window.opener.document.getElementById("localStream").value));$(remoteVid).attr("src" ,window.URL.createObjectURL(window.opener.document.getElementById("remoteStream").value))';
+			js.innerHTML = scripText;
+			h.appendChild(jqueryjs);
+			h.appendChild(js);
+		}
+		function handleRemoteStreamRemoved(event) {
+		  console.log('Remote stream removed. Event: ', event);
+		}
+
+		function hangup() {
+		  console.log('Hanging up.');
+		  stop();
+		  sendMessage('bye');
+		}
+
+		function handleRemoteHangup() {
+		  console.log('Session terminated.');
+		  stop();
+		  isInitiator = false;
+		}
+
+		function stop() {
+		  isStarted = false;
+		  // isAudioMuted = false;
+		  // isVideoMuted = false;
+		  pc.close();
+		  pc = null;
+		}
+
+		///////////////////////////////////////////
+
+		// Set Opus as the default audio codec if it's present.
+		function preferOpus(sdp) {
+		  var sdpLines = sdp.split('\r\n');
+		  var mLineIndex;
+		  // Search for m line.
+		  for (var i = 0; i < sdpLines.length; i++) {
+			  if (sdpLines[i].search('m=audio') !== -1) {
+				mLineIndex = i;
+				break;
+			  }
+		  }
+		  if (mLineIndex === null) {
+			return sdp;
+		  }
+
+		  // If Opus is available, set it as the default in m line.
+		  for (i = 0; i < sdpLines.length; i++) {
+			if (sdpLines[i].search('opus/48000') !== -1) {
+			  var opusPayload = extractSdp(sdpLines[i], /:(\d+) opus\/48000/i);
+			  if (opusPayload) {
+				sdpLines[mLineIndex] = setDefaultCodec(sdpLines[mLineIndex], opusPayload);
+			  }
+			  break;
+			}
+		  }
+
+		  // Remove CN in m line and sdp.
+		  sdpLines = removeCN(sdpLines, mLineIndex);
+
+		  sdp = sdpLines.join('\r\n');
+		  return sdp;
+		}
+
+		function extractSdp(sdpLine, pattern) {
+		  var result = sdpLine.match(pattern);
+		  return result && result.length === 2 ? result[1] : null;
+		}
+
+		// Set the selected codec to the first in m line.
+		function setDefaultCodec(mLine, payload) {
+		  var elements = mLine.split(' ');
+		  var newLine = [];
+		  var index = 0;
+		  for (var i = 0; i < elements.length; i++) {
+			if (index === 3) { // Format of media starts from the fourth.
+			  newLine[index++] = payload; // Put target payload to the first.
+			}
+			if (elements[i] !== payload) {
+			  newLine[index++] = elements[i];
+			}
+		  }
+		  return newLine.join(' ');
+		}
+
+		// Strip CN from sdp before CN constraints is ready.
+		function removeCN(sdpLines, mLineIndex) {
+		  var mLineElements = sdpLines[mLineIndex].split(' ');
+		  // Scan from end for the convenience of removing an item.
+		  for (var i = sdpLines.length-1; i >= 0; i--) {
+			var payload = extractSdp(sdpLines[i], /a=rtpmap:(\d+) CN\/\d+/i);
+			if (payload) {
+			  var cnPos = mLineElements.indexOf(payload);
+			  if (cnPos !== -1) {
+				// Remove CN payload from m line.
+				mLineElements.splice(cnPos, 1);
+			  }
+			  // Remove CN line in sdp
+			  sdpLines.splice(i, 1);
+			}
+		  }
+
+		  sdpLines[mLineIndex] = mLineElements.join(' ');
+		  return sdpLines;
+		}
+		
+		
 		$("#userGroupMessage").cleditor({
         //width:        660, // width not including margins, borders or padding
         height:       70, // height not including margins, borders or padding
@@ -119,13 +439,11 @@ $(function(){
           "margin:4px; font:10pt Arial,Verdana; cursor:text"
     });
 	
-	var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
-	//var iosocket = io.connect("http://localhost");
 	var prevRoom = ""
 	var room ="";
 	var nickname = "";
 	var video;
-	var webCamStream;
+	var nofOfUsers = 0;
 
 	iosocket.on('connect', function () {
 		
@@ -186,7 +504,7 @@ $(function(){
 			var userList = users.split(",");
 			userList.sort();
 			$("#loggedInUsers").html("");
-			var nofOfUsers = 0;
+			nofOfUsers = 0;
 			for(var i=0;i<userList.length;i++){
 				if(userList[i] != null && userList[i] != ""){
 					nofOfUsers++;
@@ -202,10 +520,13 @@ $(function(){
 		iosocket.on('joinRoom', function(user) {
 			var msgArea = $("#chatMessages");
 			var joiningMsg;
-			if(user == nickname)
+			if(user == nickname) {
 				joiningMsg  = '<br/> You have joined the room <b>'+room+'</b><br/>';
-			else
+			}
+			else {
 				joiningMsg  = '<br/>'+user+': has joined the room<br/>';
+			}
+			
 			$(msgArea).append(joiningMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		});
@@ -229,6 +550,7 @@ $(function(){
 		iosocket.on('picShareReq', function(from){
 			
 		})
+		
 		iosocket.on('binaryMessage', function(from, bData) {
 			console.log('bData recieved is ');
 			console.log(bData);
@@ -248,16 +570,43 @@ $(function(){
 				$('#'+from).closest("div").find(".MediaBlock").find("img").attr("src",bData);
 			}
 			
-			/*var currVal = $(msgArea).val();
-			var chatMsg  = message;
-			$(msgArea).append(chatMsg);
-			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);*/
 			
 		});
 		
+		iosocket.on('camRequest', function(from) {
+			if ($('#'+from).length == false){
+				addTab(from);
+			}
+			var msgArea = $('#'+from).closest("div").find(".msgBlock");
+			var currVal = $(msgArea).val();
+			var camReqMsg  = 'You have a video conferencing request from <b>'+from+'</b><br/><a href="javascript:void(0)" class="acceptCamReq" style="vertical-align:top;float:right;margin-right:5%">Accept</a>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0)" class="rejectCamReq" style="vertical-align:top;float:right;margin-right:5%">Reject</a>';
+			$(msgArea).append(camReqMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		
+		})
+
+		iosocket.on('message', function (message){
+		  console.log('Received message:', message);
+		  if (message === 'got user media') {
+			maybeStart();
+		  } else if (message.type === 'offer') {
+			if (!isInitiator && !isStarted) {
+			  maybeStart();
+			}
+			pc.setRemoteDescription(new RTCSessionDescription(message));
+			doAnswer();
+		  } else if (message.type === 'answer' && isStarted) {
+			pc.setRemoteDescription(new RTCSessionDescription(message));
+		  } else if (message.type === 'candidate' && isStarted) {
+			var candidate = new RTCIceCandidate({sdpMLineIndex:message.label,
+			  candidate:message.candidate});
+			pc.addIceCandidate(candidate);
+		  } else if (message === 'bye' && isStarted) {
+			handleRemoteHangup();
+		  }
+		});
 		
-		
+
 		//Joining dialog : user enters room name and handle
 		$('#joining_dialog').dialog({
 			autoOpen: false,
@@ -288,10 +637,12 @@ $(function(){
 		//after user has entered room name and nickname
 		$(document).bind('join', function (ev, data) {
 
-			if(data.existingRoomName != null && data.existingRoomName != '')
+			if(data.existingRoomName != null && data.existingRoomName != ''){
 				room = data.existingRoomName;
-			else
+			}
+			else {
 				room = data.newRoomName;
+			}
 			if(nickname ==null || nickname == "")
 				nickname = data.joiningHandle;
 			
@@ -309,6 +660,11 @@ $(function(){
 		})
 		
 	});//end of io.connect
+	
+	function sendMessage(message){
+	  console.log('Sending message: ', message);
+	  iosocket.emit('message', message);
+	}
 	
 
 	$(".loggedIn").live("mouseenter",function(){
@@ -369,7 +725,7 @@ $(function(){
 	}
 	// addTab function: adds new tab using the input from the form above
 	function addTab(targetUser) {
-		var tabContentHtml= '<div class="msgBlockHeader" style="height:20px;background-color:white"><a href="javascript:void(0)" class="startCam" style="vertical-align:top;float:right;margin-right:5%">Start My Cam</a></div><hr/><div class = "msgAndMediaBlock" style="width:100%;height:190px;background-color:white;"><div class="msgBlock" style="float:left;width:100%"></div></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
+		var tabContentHtml= '<div class="msgBlockHeader" style="height:20px;background-color:white"><a href="javascript:void(0)" class="startCam" style="vertical-align:top;float:right;margin-right:5%">Start Video Conference</a></div><hr/><div class = "msgAndMediaBlock" style="width:100%;height:190px;background-color:white;"><div class="msgBlock" style="float:left;width:100%"></div></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
 		var tabLabel = targetUser;
 		var label = tabLabel,
 			id = targetUser,
@@ -382,20 +738,6 @@ $(function(){
 		$("#tabs").show();    
 		$("#tabs").tabs("select", "#"+id);
 		tabCounter++;
-		
-		/*Change the Image of Anchor tag
-		var chatDivImg;
-		var chatDivAnchors = $(tabs).find("a");
-		if($(chatDivAnchors).length > 0){
-			$(chatDivAnchors).each(function() {
-				if($(this).attr("href") == ("#"+targetUser)){
-					$(this).find("img").attr("src",prevRosterImgSrc);
-				}
-			})
-		}*/
-		//alert(tabs.find('.ui-tabs-selected').html());
-		//background:#FDF5CE; color:#FF0000;
-		//tabs.tabs( "refresh" );
 		
 	}//end of addTab
 	
@@ -453,7 +795,7 @@ $(function(){
 	})
 	
 	$( ".startCam" ).live( "click", function() {
-		var targetUser = $(this).closest("div").parent().attr("id");
+		/*var targetUser = $(this).closest("div").parent().attr("id");
 		var parentdivId = "#"+targetUser;
 		var msgAndMediaDiv = $(parentdivId).find(".msgAndMediaBlock");
 		var msgDiv = $(msgAndMediaDiv).find(".msgBlock");
@@ -469,14 +811,80 @@ $(function(){
 		if (navigator.getUserMedia) {
 		  navigator.getUserMedia({audio: true, video: true}, function(stream) {
 			$(video).attr('src' ,window.URL.createObjectURL(stream));
-			webCamStream=stream;
+			localStream=stream;
 			//audio.src = window.URL.createObjectURL(stream);
 		  }, onVideoFail);
 		} 
 		else {
 		   $(video).attr('src','somevideo.webm'); // fallback.
+		}*/
+		
+		var targetUser = $(this).closest("div").parent().attr("id");
+		
+		window.URL = window.URL || window.webkitURL;
+		navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+								  navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+		if (navigator.getUserMedia) {
+		  navigator.getUserMedia({  video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
+			localStream=stream;
+			
+			console.log('Getting user media with constraints', constraints);
+			isInitiator = true;
+			console.log('Adding local stream.');
+			console.log(localStream);
+			sendMessage('got user media');
+			iosocket.emit('camReq', targetUser, nickname);
+			isChannelReady = true;
+			
+		  }, onVideoFail);
+		} 
+		else {
+		   $(video).attr('src','somevideo.webm'); // fallback.
 		}
+
+		/*var childW = window.open('','MyWebCam','width=400,height=200');
+		childW.document.open();
+		childW.document.write('<HTML><HEAD><META http-equiv="Content-type" content="text/html; charset=iso-8859-2">');
+		childW.document.write('</HEAD><BODY BGCOLOR="#f7f3e7">');
+		childW.document.write('<video autoplay height = "190" width ="100%" id="webCamVideo"></video>');
+		childW.document.write('</BODY></HTML>');
+		childW.document.close();
+
+		var h = childW.document.getElementsByTagName("head")[0];
+		var jqueryjs = childW.document.createElement("script");
+		jqueryjs.type = "text/javascript";
+		jqueryjs.src = "http://code.jquery.com/jquery-1.8.2.js";
+		
+		var js = childW.document.createElement("script");
+		js.type = "text/javascript";
+		var scripText = 'var video = document.getElementById("webCamVideo");window.URL = window.URL || window.webkitURL;navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||navigator.mozGetUserMedia || navigator.msGetUserMedia;if (navigator.getUserMedia) {navigator.getUserMedia({audio: true, video: true}, function(stream) {$(video).attr("src" ,window.URL.createObjectURL(stream));window.opener.document.getElementById("localStream").value =stream;}, onVideoFail);} else {$(video).attr("src","somevideo.webm");}	function onVideoFail(code){console.log("failed");}';
+		js.innerHTML = scripText;
+		h.appendChild(jqueryjs);
+		h.appendChild(js); */
+
+	})
 	
+	$( ".acceptCamReq" ).live( "click", function() {
+	
+			isChannelReady = true;
+			window.URL = window.URL || window.webkitURL;
+			navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+									  navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+			if (navigator.getUserMedia) {
+			  navigator.getUserMedia({  video: {mandatory: {maxWidth: 320, maxHeight: 180 }}}, function(stream) {
+				localStream=stream;
+				
+				console.log('Getting user media with constraints', constraints);
+				console.log('Adding local stream.');
+				sendMessage('got user media');
+			
+			  }, onVideoFail);
+			} 
+			else {
+			   $(video).attr('src','somevideo.webm'); // fallback.
+			}
 	})
 	
 	function onVideoFail(code){
@@ -495,7 +903,7 @@ $(function(){
 	})
 	
 	$( ".stopCam" ).live("click", function() {
-		webCamStream.stop();
+		localStream.stop();
 		var msgAndMediaDiv = $(this).closest("div").parent();
 		$(msgAndMediaDiv).children('.mediaBlock').remove();
 		$(msgDiv).css('width','100%');
@@ -506,75 +914,6 @@ $(function(){
 	
   });//end of $(function
 
-/*
-<canvas id="canvas" width="500px" height="300px"></canvas>
-<input type="file" id="file-input">
-<script>
-$(function() {
-    $('#file-input').change(function(e) {
-        var file = e.target.files[0],
-            imageType = /image.*/;
-		/*
-        if (!file.type.match(imageType))
-            return;
-
-        var reader = new FileReader();
-        reader.onload = fileOnload;
-        reader.readAsDataURL(file);        
-    });
-
-    function fileOnload(e) {
-        var $img = $('<img>', { src: e.target.result });
-        var canvas = $('#canvas')[0];
-        var context = canvas.getContext('2d');
-
-        $img.load(function() {
-            context.drawImage(this, 0, 0);
-        });
-    }
-}); */
 </script>  
-</script>
-</head>
-<body>
-
-<!-- Enter room dialog -->
-<div id='joining_dialog' class='hidden' style='left:5%'>
-
-<canvas id="myCanvas" width="320" height="240" style="display: none"></canvas>
-
-<span id='roomsBlock'>	  
-<label style='font-weight:bold'>Choose from Existing Rooms:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
-	<Select id='existingRoomName'></select><br/><br/>
-	<center> <b> OR </b></center><br/>
-</span>
-<span id='noRoomsBlock'>	  
-<label style='font-weight:bold'>No rooms exist as of now. Why don't you create your own!</label><br/><br/>
-</span>
-<label style='font-weight:bold'>Enter new Room name:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='newRoomName'><br/><br/><br/>
-<label id='joiningHandleLabel' style='font-weight:bold'>Enter your Login Handle:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><input type='text' id='joiningHandle'>
-</div>
-
-<!-- Show Group Client -->
-<div id="displaydiv" class="chat-menu">
-	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #1797C0" class="chat-div">
-		<div id="usersMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px"></div>
-		<div id="loggedInUsers" style="font-size:medium;"></div>
-	</div>
-	<div style="float:right;width:79%;height:630px;border:1px solid #1797C0" class="chat-div">
-		<div id="roomMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
-		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #1797C0;padding-left:5px;font-size:medium;" ></div>
-		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
-		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.. " style="width:99%"></textarea>
-	</div>
-</div>
-
-<!-- User chat tabs -->
-<!--div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom" -->
-<div id="tabs" style="position:fixed;width:35%;bottom:0;right:65%;left:0;display:none;border:1px solid #1797C0;" class="tabs-bottom floating-menu">
-    <ul></ul>
-	<div class="tabs-spacer"></div>
-</div>
-
-</body>
+</footer>
 </html>
