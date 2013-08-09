@@ -133,10 +133,10 @@
 <!-- webrtc -->
 <div id="videos" style="padding-top:5px; padding-left:5px;width:100%">
 	<div style="width:49%;float:left">
-		<video id='localVideo' autoplay muted></video>
+		<video id='localVideo' muted></video>
 	</div>
 	<div style="width:49%;float:right">
-		<video id='remoteVideo' autoplay></video>
+		<video id='remoteVideo' ></video>
 	</div>
 </div>
 
@@ -579,7 +579,7 @@ $(function(){
 		
 			var camMsgArea = $('#'+from).closest("div").find(".msgBlock").find(".camMsgs");
 			var currVal = $(camMsgArea).val();
-			var camAccptMsg  = 'Your video conferencing request with user '+from+' has been '+message+'.';
+			var camAccptMsg  = from+' has '+message+' your video conferencing request.';
 			$(camMsgArea).append(camAccptMsg);
 			$(camMsgArea).scrollTop($(camMsgArea)[0].scrollHeight);
 		})
