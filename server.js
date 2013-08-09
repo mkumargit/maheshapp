@@ -213,6 +213,11 @@ var onlineClients = {};
 			io.sockets.socket(id).emit('camRequest',from);
 		})
 		
+		socket.on('camReqRes', function (to, from, msg) {
+			var id = onlineClients[to];
+			io.sockets.socket(id).emit('camRequestResult',from, msg);
+		})
+		
 		
 	}
 	

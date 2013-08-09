@@ -29,3 +29,18 @@ handleRemoteStream
 
 
 maybestart 
+
+
+
+
+This appears to be Chrome adapter.js:41
+Create or join room foo localhost:8888/:175
+Getting user media with constraints Object {video: true} localhost:8888/:253
+Created room foo 
+
+
+
+
+create room
+handle user media
+add stream and send message got user media

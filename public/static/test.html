@@ -5,10 +5,13 @@
 <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
 <link rel="stylesheet" type="text/css" href="/stylesheets/jquery.cleditor.css" />
 <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+<!--<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script> -->
 <script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+<!-- <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script> -->
 <script src="/javascripts/jquery.cookie.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script type="text/javascript" src="/javascripts/jquery.cleditor.min.js"></script>
+<script src="/javascripts/jquery.dialogextend.min.js"></script>
 <style>
 	body {
 			font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
@@ -82,10 +85,19 @@
 	{
 		border-radius:5px;-moz-border-radius:5px;
 	}
+	
+	.camMsgs
+	{
+		color:blue
+	}
 </style>	
 </head>
+<!--
 <body>
-
+<canvas id="canvas" width="500px" height="300px"></canvas>
+<hr/>
+<input type="file" id="file-input" accept="image/*">
+-->
 <!-- Enter room dialog -->
 <div id='joining_dialog' class='hidden' style='left:5%'>
 
@@ -118,11 +130,13 @@
 </div>
 
 <!-- webrtc -->
-<div id='container'>
-  <div id='videos' style="padding-top:5px; padding-left:5px;">
-    <video id='localVideo' autoplay muted></video> &nbsp;&nbsp;
-    <video id='remoteVideo' autoplay></video>
-  </div>
+<div id="videos" style="padding-top:5px; padding-left:5px;width:100%">
+	<div style="width:49%;float:left">
+		<video id='localVideo' autoplay muted></video>
+	</div>
+	<div style="width:49%;float:right">
+		<video id='remoteVideo' autoplay></video>
+	</div>
 </div>
 
 <!-- User chat tabs -->
@@ -146,7 +160,19 @@ $(function(){
 		var pc;
 		var remoteStream;
 		var turnReady;
+		
+		var prevRoom = ""
+		var room ="";
+		var nickname = "";
+		
+		var constraints = {audio:true, video: true};
+		
+		var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
+		//var iosocket = io.connect("http://localhost");
 
+		var localVideo = document.querySelector('#localVideo');
+		var remoteVideo = document.querySelector('#remoteVideo');
+		
 		var pc_config = webrtcDetectedBrowser === 'firefox' ?
 		  {'iceServers':[{'url':'stun:23.21.150.121'}]} : // number IP
 		  {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
@@ -159,34 +185,10 @@ $(function(){
 		  'OfferToReceiveVideo':true }};
 
 		/////////////////////////////////////////////
-		
-		var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
-		//var iosocket = io.connect("http://localhost");
 
-
-		var localVideo = document.querySelector('#localVideo');
-		var remoteVideo = document.querySelector('#remoteVideo');
-
-		/*function handleUserMedia(stream) {
-		  localStream = stream;
-		  attachMediaStream(localVideo, stream);
-		  console.log('Adding local stream.');
-		  sendMessage('got user media');
-		  if (isInitiator) {
-			maybeStart();
-		  }
-		}*/
-
-		function handleUserMediaError(error){
-		  console.log('navigator.getUserMedia error: ', error);
-		}
-
-		var constraints = {video: true};
 
 		function maybeStart() {
-		  console.log(' is started is '+isStarted);
-		  console.log(' localStream is '+localStream);
-		  console.log(' isChannelReady is '+isChannelReady);
+		
 		  if (!isStarted && localStream && isChannelReady) {
 			console.log('in maybestart method');
 			createPeerConnection();
@@ -276,33 +278,29 @@ $(function(){
 		 attachMediaStream(localVideo, localStream);
 		 attachMediaStream(remoteVideo, event.stream);
 		 remoteStream = event.stream;
-		 //createNewVideoWindow();
+		 $("#videos").dialog({
+			width:'auto',
+			height:'auto',
+			close: hangup
+		 }).dialogExtend({
+			"close" : true,
+			"maximize" : true,
+			"minimize" : true,
+			"icons" : {
+			  "close" : "ui-icon-circle-close",
+			  "maximize" : "ui-icon-extlink",
+			  "minimize" : "ui-icon-minus",
+			},
+			"events" : {
+			  "close" : function(evt, dlg){ alert(evt.type+"."+evt.handleObj.namespace); }
+			}
+		  });
+		  
+		 localVideo.play();
+		 remoteVideo.play();
 		//  waitForRemoteVideo();
 		}
 		
-		function createNewVideoWindow(){
-		
-			var childW = window.open('','','width=1500,height=400');
-			childW.document.open();
-			childW.document.write('<HTML><HEAD><META http-equiv="Content-type" content="text/html; charset=iso-8859-2">');
-			childW.document.write('</HEAD><BODY BGCOLOR="#f7f3e7">');
-			childW.document.write('<video autoplay height = "190" width ="100%" id="localVideo"></video>');
-			childW.document.write('<video autoplay height = "190" width ="100%" id="remoteVideo"></video>');
-			childW.document.write('</BODY></HTML>');
-			childW.document.close();
-
-			var h = childW.document.getElementsByTagName("head")[0];
-			var jqueryjs = childW.document.createElement("script");
-			jqueryjs.type = "text/javascript";
-			jqueryjs.src = "http://code.jquery.com/jquery-1.8.2.js";
-			
-			var js = childW.document.createElement("script");
-			js.type = "text/javascript";
-			var scripText = 'var localVid = document.getElementById("localVideo");var remoteVid = document.getElementById("remoteVideo");window.URL = window.URL || window.webkitURL; $(localVid).attr("src" ,window.URL.createObjectURL(window.opener.document.getElementById("localStream").value));$(remoteVid).attr("src" ,window.URL.createObjectURL(window.opener.document.getElementById("remoteStream").value))';
-			js.innerHTML = scripText;
-			h.appendChild(jqueryjs);
-			h.appendChild(js);
-		}
 		function handleRemoteStreamRemoved(event) {
 		  console.log('Remote stream removed. Event: ', event);
 		}
@@ -310,6 +308,8 @@ $(function(){
 		function hangup() {
 		  console.log('Hanging up.');
 		  stop();
+		  alert("1");
+		  localStream.stop();
 		  sendMessage('bye');
 		}
 
@@ -438,12 +438,6 @@ $(function(){
         bodyStyle:    // style to assign to document body contained within the editor
           "margin:4px; font:10pt Arial,Verdana; cursor:text"
     });
-	
-	var prevRoom = ""
-	var room ="";
-	var nickname = "";
-	var video;
-	var nofOfUsers = 0;
 
 	iosocket.on('connect', function () {
 		
@@ -477,10 +471,6 @@ $(function(){
 			
 		});
 		
-		iosocket.on('message', function(message) {
-
-		});
-		
 		iosocket.on('privateMessage', function(from, message) {
 			if ($('#'+from).length == false){
 				addTab(from);
@@ -504,7 +494,7 @@ $(function(){
 			var userList = users.split(",");
 			userList.sort();
 			$("#loggedInUsers").html("");
-			nofOfUsers = 0;
+			var nofOfUsers = 0;
 			for(var i=0;i<userList.length;i++){
 				if(userList[i] != null && userList[i] != ""){
 					nofOfUsers++;
@@ -579,10 +569,19 @@ $(function(){
 			}
 			var msgArea = $('#'+from).closest("div").find(".msgBlock");
 			var currVal = $(msgArea).val();
-			var camReqMsg  = 'You have a video conferencing request from <b>'+from+'</b><br/><a href="javascript:void(0)" class="acceptCamReq" style="vertical-align:top;float:right;margin-right:5%">Accept</a>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0)" class="rejectCamReq" style="vertical-align:top;float:right;margin-right:5%">Reject</a>';
+			var camReqMsg  = '<span class = "camMsgs">You have a video conferencing request from '+from+'<br/><a href="javascript:void(0)" class="acceptCamReq" style="vertical-align:top;float:right;margin-right:5%">Accept</a>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0)" class="rejectCamReq" style="vertical-align:top;float:right;margin-right:5%">Reject</a></span>';
 			$(msgArea).append(camReqMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		
+		})
+		
+		iosocket.on('camRequestResult', function(from, message) {
+		
+			var camMsgArea = $('#'+from).closest("div").find(".msgBlock").find(".camMsgs");
+			var currVal = $(camMsgArea).val();
+			var camAccptMsg  = 'Your video conferencing request with user '+from+' has been '+message+'.';
+			$(camMsgArea).append(camAccptMsg);
+			$(camMsgArea).scrollTop($(camMsgArea)[0].scrollHeight);
 		})
 
 		iosocket.on('message', function (message){
@@ -614,8 +613,9 @@ $(function(){
 			modal: true,
 			width:400,
 			title: 'Enter Room name and Handle',
-			buttons: {
-				"Ok": function () {
+			buttons: [{
+				text: "Ok",
+				click: function() {
 					$(document).trigger('join', {
 						existingRoomName: $('#existingRoomName').val(),
 						newRoomName: $('#newRoomName').val(),
@@ -626,9 +626,9 @@ $(function(){
 					$('#newRoomName').val('');
 					$('#joiningHandle').val('');
 					
-					$(this).dialog('close');
+					$('#joining_dialog').dialog('close');
 				}
-			}
+			}]
 		});
 		
 		//$('#joining_dialog').dialog('open');
@@ -667,16 +667,16 @@ $(function(){
 	}
 	
 
-	$(".loggedIn").live("mouseenter",function(){
+	$(document).on("mouseenter", ".loggedIn",function(){
            $(this).removeClass("loggedIn").addClass("loggedIn_hover");
     })
 	
-    $(".loggedIn_hover").live("mouseleave",function(){
+    $(document).on("mouseleave",".loggedIn_hover",function(){
            $(this).removeClass("loggedIn_hover").addClass("loggedIn");
                 
     })
 	
-	$(".loggedIn_hover").live("click",function(){
+	$(document).on("click",".loggedIn_hover",function(){
 		addTab($(this).html());
 	})
 	
@@ -693,7 +693,7 @@ $(function(){
 	})
 	
 	 //called when user presses enter key to send message from chat window
-	  $(".newText").live("keypress",function(e){
+	  $(document).on("keypress", ".newText",function(e){
          if (e.which == 13 ) {
             sendMsg(this);
 			$(this).html("");
@@ -765,7 +765,7 @@ $(function(){
 	  }
 	  
 	// close icon: removing the tab on click
-	$( "#tabs span.ui-icon-close" ).live( "click", function() {
+	$(document).on("click", "#tabs span.ui-icon-close", function() {
 	
 		var closestAnchor = $( this ).closest( "li" ).find("a");
 		var imgSrc = $(closestAnchor).find("img").attr("src");
@@ -783,7 +783,7 @@ $(function(){
 		$(rosterImg).attr("src",imgSrc);
 	});
 	
-	$( "#changeRoom" ).live( "click", function() {
+	$(document).on("click", "#changeRoom" , function() {
 	
 		prevRoom = room;
 		
@@ -794,30 +794,7 @@ $(function(){
 		
 	})
 	
-	$( ".startCam" ).live( "click", function() {
-		/*var targetUser = $(this).closest("div").parent().attr("id");
-		var parentdivId = "#"+targetUser;
-		var msgAndMediaDiv = $(parentdivId).find(".msgAndMediaBlock");
-		var msgDiv = $(msgAndMediaDiv).find(".msgBlock");
-		$("#tabs").css('width','50%');
-		$(msgDiv).css('width','50%');
-		$(msgAndMediaDiv).append('<div class = "mediaBlock" style="float:right;width:50%"><a href="javascript:void(0)" class="stopCam" style="vertical-align:top;float:right;margin-right:5%">Stop Cam</a><a href="javascript:void(0)" class="sendCamImage" style="vertical-align:top;float:right;margin-right:5%">Send Image from Cam</a><video autoplay height = "190" width ="100%" id="webCamVideo"></video><div>');
-		
-		video = document.getElementById('webCamVideo');
-		window.URL = window.URL || window.webkitURL;
-		navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
-								  navigator.mozGetUserMedia || navigator.msGetUserMedia;
-
-		if (navigator.getUserMedia) {
-		  navigator.getUserMedia({audio: true, video: true}, function(stream) {
-			$(video).attr('src' ,window.URL.createObjectURL(stream));
-			localStream=stream;
-			//audio.src = window.URL.createObjectURL(stream);
-		  }, onVideoFail);
-		} 
-		else {
-		   $(video).attr('src','somevideo.webm'); // fallback.
-		}*/
+	$(document).on("click", ".startCam", function() {
 		
 		var targetUser = $(this).closest("div").parent().attr("id");
 		
@@ -826,7 +803,8 @@ $(function(){
 								  navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
 		if (navigator.getUserMedia) {
-		  navigator.getUserMedia({  video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
+		  //navigator.getUserMedia({ audio:true, video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
+			navigator.getUserMedia({ audio:true, video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
 			localStream=stream;
 			
 			console.log('Getting user media with constraints', constraints);
@@ -837,48 +815,45 @@ $(function(){
 			iosocket.emit('camReq', targetUser, nickname);
 			isChannelReady = true;
 			
+			var msgArea = $('#'+targetUser).closest("div").find(".msgBlock");
+			var currVal = $(msgArea).val();
+			var camReqMsg  = '<span class = "camMsgs">Your video conferencing request has been sent to the user<br/></span>';
+			$(msgArea).append(camReqMsg);
+			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
+			
 		  }, onVideoFail);
 		} 
 		else {
 		   $(video).attr('src','somevideo.webm'); // fallback.
 		}
 
-		/*var childW = window.open('','MyWebCam','width=400,height=200');
-		childW.document.open();
-		childW.document.write('<HTML><HEAD><META http-equiv="Content-type" content="text/html; charset=iso-8859-2">');
-		childW.document.write('</HEAD><BODY BGCOLOR="#f7f3e7">');
-		childW.document.write('<video autoplay height = "190" width ="100%" id="webCamVideo"></video>');
-		childW.document.write('</BODY></HTML>');
-		childW.document.close();
-
-		var h = childW.document.getElementsByTagName("head")[0];
-		var jqueryjs = childW.document.createElement("script");
-		jqueryjs.type = "text/javascript";
-		jqueryjs.src = "http://code.jquery.com/jquery-1.8.2.js";
-		
-		var js = childW.document.createElement("script");
-		js.type = "text/javascript";
-		var scripText = 'var video = document.getElementById("webCamVideo");window.URL = window.URL || window.webkitURL;navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||navigator.mozGetUserMedia || navigator.msGetUserMedia;if (navigator.getUserMedia) {navigator.getUserMedia({audio: true, video: true}, function(stream) {$(video).attr("src" ,window.URL.createObjectURL(stream));window.opener.document.getElementById("localStream").value =stream;}, onVideoFail);} else {$(video).attr("src","somevideo.webm");}	function onVideoFail(code){console.log("failed");}';
-		js.innerHTML = scripText;
-		h.appendChild(jqueryjs);
-		h.appendChild(js); */
-
 	})
 	
-	$( ".acceptCamReq" ).live( "click", function() {
-	
+	$(document).on("click", ".acceptCamReq", function() {
+
+			var requestorUser = $(this).closest("div").parent().parent().attr("id");
+			
 			isChannelReady = true;
 			window.URL = window.URL || window.webkitURL;
 			navigator.getUserMedia  = navigator.getUserMedia || navigator.webkitGetUserMedia ||
 									  navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
 			if (navigator.getUserMedia) {
-			  navigator.getUserMedia({  video: {mandatory: {maxWidth: 320, maxHeight: 180 }}}, function(stream) {
+			  //navigator.getUserMedia({  video: {mandatory: {maxWidth: 320, maxHeight: 180 }}}, function(stream) {
+			    navigator.getUserMedia({ audio:true, video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
 				localStream=stream;
 				
 				console.log('Getting user media with constraints', constraints);
 				console.log('Adding local stream.');
 				sendMessage('got user media');
+				
+				var camMsgArea = $('#'+requestorUser).closest("div").find(".msgBlock").find(".camMsgs");
+				var currVal = $(camMsgArea).val();
+				var camAccptMsg  = 'You are now in video conferencing with '+requestorUser+'.';
+				$(camMsgArea).html(camAccptMsg);
+				$(camMsgArea).scrollTop($(camMsgArea)[0].scrollHeight);
+				
+				iosocket.emit('camReqRes', requestorUser, nickname, 'accepted');
 			
 			  }, onVideoFail);
 			} 
@@ -886,12 +861,26 @@ $(function(){
 			   $(video).attr('src','somevideo.webm'); // fallback.
 			}
 	})
+	$(document).on("click", ".rejectCamReq", function() {
+		
+		var requestorUser = $(this).closest("div").parent().parent().attr("id");
+		var camMsgArea = $('#'+requestorUser).closest("div").find(".msgBlock").find(".camMsgs");
+		var currVal = $(camMsgArea).val();
+		var camAccptMsg  = 'You have declined the video conferencing request from  '+requestorUser+'.';
+		$(camMsgArea).html(camAccptMsg);
+		$(camMsgArea).scrollTop($(camMsgArea)[0].scrollHeight);
+		
+		iosocket.emit('camReqRes', requestorUser, nickname, 'rejected');
+		
+		
+	})
+	
 	
 	function onVideoFail(code){
 		console.log('failed');
 	}
 	
-	$( ".sendCamImage" ).live("click", function(){
+	$(document).on("click", ".sendCamImage", function(){
 		var targetUser = $(this).closest("div").parent().parent().attr("id");
 		var canvas = document.getElementById('myCanvas');
 		context = canvas.getContext('2d');
@@ -902,7 +891,7 @@ $(function(){
 		
 	})
 	
-	$( ".stopCam" ).live("click", function() {
+	$(document).on("click", ".stopCam", function() {
 		localStream.stop();
 		var msgAndMediaDiv = $(this).closest("div").parent();
 		$(msgAndMediaDiv).children('.mediaBlock').remove();
@@ -910,6 +899,28 @@ $(function(){
 		
 		
 	})
+	
+	$('#file-input').change(function(e) {
+        var file = e.target.files[0],
+            imageType = /image.*/;
+
+        if (!file.type.match(imageType))
+            return;
+
+        var reader = new FileReader();
+        reader.onload = fileOnload;
+        reader.readAsDataURL(file);        
+    });
+
+    function fileOnload(e) {
+        var $img = $('<img>', { src: e.target.result });
+        var canvas = $('#canvas')[0];
+        var context = canvas.getContext('2d');
+
+        $img.load(function() {
+            context.drawImage(this, 0, 0);
+        });
+    }
 	
 	
   });//end of $(function
