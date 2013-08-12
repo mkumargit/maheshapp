@@ -185,8 +185,6 @@ var onlineClients = {};
 		socket.on('message', function (message) {
 			console.log(message);
 			socket.broadcast.emit('message', message); // should be room only
-			if(message == "bye")
-				socket.disconnect();
 		});
 	
 		socket.on('create or join', function (room) {
