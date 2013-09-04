@@ -28,7 +28,7 @@ io.configure(function () {
 var onlineClients = {};
 
 	app.get('/', function(req,res) {
-		console.log('node.js server started...');
+		//console.log('node.js server started...');
 		requestHandlers.start(res,req,io); //send request directly to router.js
 	})
 	
@@ -69,8 +69,8 @@ var onlineClients = {};
 	    });
 		
 		socket.on('unjoinRoom', function (data) {
-			console.log('in unjoin');
-			console.log('Data Received: ', data);
+			//console.log('in unjoin');
+			//console.log('Data Received: ', data);
 			var userRoom,userNickname;
 			for(var key in data){ 
 				if(key =="room"){
@@ -91,17 +91,17 @@ var onlineClients = {};
 				})
 			});
 			
-			console.log('nicknames are '+nicknames);
-			console.log('in unjoin 1');
+			//console.log('nicknames are '+nicknames);
+			//console.log('in unjoin 1');
 			
 			io.sockets.in(userRoom).emit('allUsers', nicknames);
 			io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
-			console.log('in unjoin 2');
+			//console.log('in unjoin 2');
 			
 	    });
 		
 		socket.on('publicMessage',function (data) {
-			console.log('Message Received: ', data);
+			//console.log('Message Received: ', data);
 			var userRoom,userMessage;
 			socket.get('nickname', function (err, name) {
 				for(var key in data){ 
@@ -172,7 +172,7 @@ var onlineClients = {};
 						})
 					});
 					
-					console.log('userRoom is '+userRoom);
+					//console.log('userRoom is '+userRoom);
 					io.sockets.in(userRoom).emit('allUsers', nicknames);
 					io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
 			    }
@@ -188,7 +188,7 @@ var onlineClients = {};
 		
 		//webrtc functions
 		socket.on('message', function (message) {
-			console.log(message);
+			//console.log(message);
 			socket.broadcast.emit('message', message); // should be room only
 		});
 	
