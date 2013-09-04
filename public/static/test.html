@@ -168,7 +168,8 @@ $(function(){
 		
 		var constraints = {audio:true, video: true};
 		
-		var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
+		var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com", {'sync disconnect on unload': true });
+		//var iosocket = io.connect("http://boiling-oasis-5706.herokuapp.com");
 		//var iosocket = io.connect("http://localhost");
 
 		var localVideo = document.querySelector('#localVideo');
@@ -202,7 +203,7 @@ $(function(){
 		}
 
 		window.onbeforeunload = function(e){
-			sendMessage('bye');
+			//sendMessage('bye');
 			iosocket.disconnect();
 		}
 
