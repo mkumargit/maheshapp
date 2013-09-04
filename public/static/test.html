@@ -120,7 +120,18 @@
 <div id="displaydiv" class="chat-menu">
 	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #1797C0" class="chat-div">
 		<div id="usersMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px"></div>
-		<div id="loggedInUsers" style="font-size:medium;"></div>
+		<div id="usersAndRooms" style="font-size:medium;">
+			 <ul>
+				<li><a href="#loggedInUsers">Users</a></li>
+				<li><a href="#loggedInRooms">Rooms</a></li>
+			</ul>
+			 <div id="loggedInUsers">
+					
+			</div>
+			<div id="loggedInRooms">
+					
+			</div>
+		</div>
 	</div>
 	<div style="float:right;width:79%;height:630px;border:1px solid #1797C0" class="chat-div">
 		<div id="roomMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
@@ -713,6 +724,10 @@ $(function(){
 	$( "#tabs" ).tabs({
       collapsible: true
     });
+	
+	var tabs2 = 
+	$( "#usersAndRooms" ).tabs();
+	
 	//$( "#tabs" ).tabs();
 		
 	function moveToBottom(){
