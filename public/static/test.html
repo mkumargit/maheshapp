@@ -17,6 +17,7 @@
 	body {
 			font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
 			font-size: 62.5%;
+			background-color:white
 	}
 	
 	 #tabs { margin-top: 1em; }
@@ -61,10 +62,14 @@
 	}
 	
 	//div.chat-menu {position:fixed;background:white;border:1px solid #1797C0;width:50%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
-	div.chat-menu {background:white;border:1px solid #1797C0;width:70%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
+	div.chat-menu {background:white;border:1px solid #1797C0;width:100%;height:630px;bottom:20%;right:40%;left:10%;top:10%;border-radius:5px;-moz-border-radius:5px;}
 	span.loggedIn {color:black;font-size:13px;padding-left:5px}
 	span.loggedInUser {font-weight:bold;font-size:13px;padding-left:5px}
 	span.loggedIn_hover {color:black;font-size:13px;padding-left:5px;cursor:pointer}
+	
+	span.room {color:black;font-size:13px;padding-left:5px}
+	span.userRoom {font-weight:bold;font-size:13px;padding-left:5px}
+	span.room_hover {color:black;font-size:13px;padding-left:5px;cursor:pointer}
 		
 	.hidden {
 		display: none
@@ -124,21 +129,19 @@
 <div id="displaydiv" class="chat-menu">
 	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #1797C0" class="chat-div">
 		<!--div id="usersMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px"></div-->
-		<div id="usersAndRooms">
-			 <ul style="float:left;width:100%">
-				<li style="float:left;width:47%"><a href="#loggedInUsers" style="display:block;">Users</a></li>
-				<li style="float:right;width:47%"><a href="#loggedInRooms" style="display:block;">Rooms</a></li>
+		<div id="usersAndRooms" >
+			 <ul style="width:97%">
+				<li style="float:left;width:48%"><a href="#loggedInUsers" style="display:block;">Users</a></li>
+				<li style="float:right;width:48%"><a href="#loggedInRooms" style="display:block;">Rooms</a></li>
 			</ul>
-			 <div id="loggedInUsers" style="height:600px;font-size:medium;">
-					
+			 <div id="loggedInUsers" style="height:567px;font-size:medium;">	
 			</div>
-			<div id="loggedInRooms" style="height:600px;font-size:medium;">
-					
+			<div id="loggedInRooms" style="height:567px;font-size:medium;">	
 			</div>
 		</div>
 	</div>
 	<div style="float:right;width:79%;height:630px;border:1px solid #1797C0" class="chat-div">
-		<div id="roomMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;padding-top:5px" class="chat-div"></div>
+		<div id="roomMessageHeader" style="font-size:14pt;background-color:#1797C0;color:white;width:100%;height:30px;margin-top:5px" class="chat-div"></div>
 		<div id="chatMessages" style="overflow:auto;width:100%;height:520px;border-bottom:1px solid #1797C0;padding-left:5px;font-size:medium;" ></div>
 		<!--input type="text" id="userGroupMessage" placeholder="Type a message here to send to the room.." style="width:99%;height:36px"/ -->
 		<textarea id="userGroupMessage" name="userGroupMessage" placeholder="Type a message here to send to the room.. " style="width:99%"></textarea>
@@ -146,11 +149,13 @@
 </div>
 
 <!-- webrtc -->
-<div id="videos" style="padding-top:5px; padding-left:5px;width:100%">
-	<div style="width:49%;float:left">
+<div id="localVideos" style="width:100%;bottom:0">
+	<div style="width:100%">
 		<video id='localVideo' muted></video>
 	</div>
-	<div style="width:49%;float:right">
+</div>
+<div id="remoteVideos" style="width:100%;bottom:0">
+	<div style="width:100%">
 		<video id='remoteVideo' ></video>
 	</div>
 </div>
@@ -180,6 +185,7 @@ $(function(){
 		var prevRoom = ""
 		var room ="";
 		var nickname = "";
+		var roomsList;
 		
 		var constraints = {audio:true, video: true};
 		
@@ -296,7 +302,27 @@ $(function(){
 		 attachMediaStream(localVideo, localStream);
 		 attachMediaStream(remoteVideo, event.stream);
 		 remoteStream = event.stream;
-		 $("#videos").dialog({
+		 $("#localVideos").dialog({
+			position: ["left", "bottom"],
+			width:'auto',
+			height:'auto',
+			close: hangup
+		 }).dialogExtend({
+			"close" : true,
+			"maximize" : true,
+			"minimize" : true,
+			"icons" : {
+			  "close" : "ui-icon-circle-close",
+			  "maximize" : "ui-icon-extlink",
+			  "minimize" : "ui-icon-minus",
+			},
+			"events" : {
+			  "close" : function(evt, dlg){ alert(evt.type+"."+evt.handleObj.namespace); }
+			}
+		  });
+		  
+		 $("#remoteVideos").dialog({
+			position: ["left", "bottom"],
 			width:'auto',
 			height:'auto',
 			close: hangup
@@ -459,32 +485,53 @@ $(function(){
 	iosocket.on('connect', function () {
 		
 		iosocket.on('allRooms', function(rooms) {
-			var existingRooms = "<option value=''>--Select--</option>";
+			var nofOfRooms = 0;
 			if(rooms != null && rooms != ""){
-				var roomsList = (String(rooms).replace(/\//g,'')).split(',');
+				roomsList = (String(rooms).replace(/\//g,'')).split(',');
+				$("#loggedInRooms").html("");
 				for(var i=0;i<roomsList.length;i++){
 					if(roomsList[i] != ""){
-						existingRooms += '<option value="' + roomsList[i]+ '">' +roomsList[i]+ '</option>';
+						nofOfRooms++;
+						if(roomsList[i] == room){
+							$("#loggedInRooms").append("<br/><span class='userRoom' id='"+roomsList[i]+"_userRoom'>"+roomsList[i]+"</span><br/>");
+						}
+						else {
+							$("#loggedInRooms").append("<br/><span class='room' id='"+roomsList[i]+"_room'>"+roomsList[i]+"</span><br/>");
+						}
 					}
 				}
-			    $('#existingRoomName').html(existingRooms);
-				$('#noRoomsBlock').hide();
-				$('#roomsBlock').show();
+				//$("#roomsMessageHeader").html("<center>Rooms ("+nofOfRooms+")</center>");
 				
 			}
-			else {
-				$('#roomsBlock').hide();
-				$('#noRoomsBlock').show();
-				$('#newRoomName').val('room');
-			}
 			
-			if($.cookie("nickname")!=null && $.cookie("nickname")!='undefined')
-			{
-				nickname = $.cookie("nickname");
-				$('#joiningHandle').val(nickname);
+			if(room == null || room == ""){
+				var existingRooms = "<option value=''>--Select--</option>";
+				if(roomsList != null && roomsList != ""){
+					for(var i=0;i<roomsList.length;i++){
+						if(roomsList[i] != ""){
+							existingRooms += '<option value="' + roomsList[i]+ '">' +roomsList[i]+ '</option>';
+						}
+					}
+					
+					$('#existingRoomName').html(existingRooms);
+					$('#noRoomsBlock').hide();
+					$('#roomsBlock').show();
+					
+				}
+				else {
+					$('#roomsBlock').hide();
+					$('#noRoomsBlock').show();
+					$('#newRoomName').val('room');
+				}
+				
+				if($.cookie("nickname")!=null && $.cookie("nickname")!='undefined')
+				{
+					nickname = $.cookie("nickname");
+					$('#joiningHandle').val(nickname);
+				}
+				
+				$('#joining_dialog').dialog('open');
 			}
-			
-			$('#joining_dialog').dialog('open');
 			
 		});
 		
@@ -539,7 +586,6 @@ $(function(){
 		});
 		
 		iosocket.on('unjoinRoom', function(user) {
-			console.log('in unjoin user is '+user);
 			//$("#"+user+"_loggedIn").remove();
 			var msgArea = $("#chatMessages");
 			var	unjoiningMsg  = '<br/>'+user+': has left the room<br/>';
@@ -649,7 +695,11 @@ $(function(){
 		});
 		
 		//$('#joining_dialog').dialog('open');
-		iosocket.emit('getRooms');
+		joinChatRoom();
+		
+		function joinChatRoom(){
+			iosocket.emit('getRooms');
+		}
 		
 		//after user has entered room name and nickname
 		$(document).bind('join', function (ev, data) {
@@ -693,8 +743,21 @@ $(function(){
                 
     })
 	
+	$(document).on("mouseenter", ".room",function(){
+           $(this).removeClass("room").addClass("room_hover");
+    })
+	
+    $(document).on("mouseleave",".room_hover",function(){
+           $(this).removeClass("room_hover").addClass("room");
+                
+    })
+	
 	$(document).on("click",".loggedIn_hover",function(){
 		addTab($(this).html());
+	})
+	
+	$(document).on("click",".room_hover",function(){
+		changeRoom($(this).html());
 	})
 	
 	//Called when user send message to whole group
@@ -805,16 +868,16 @@ $(function(){
 		$(rosterImg).attr("src",imgSrc);
 	});
 	
-	$(document).on("click", "#changeRoom" , function() {
+	function changeRoom(targetRoom){
 	
-		prevRoom = room;
-		
-		$('#joiningHandleLabel').hide();
-		$('#joiningHandle').hide();
-		
-		iosocket.emit('getRooms');
-		
-	})
+			iosocket.emit('unjoinRoom', {room : room, nickname : nickname});
+			var msgArea = $("#chatMessages");
+			unjoiningMsg  = '<br/> You have left the room <b>'+room+'</b><br/>';
+			$(msgArea).append(unjoiningMsg);
+			
+			room = targetRoom;
+			iosocket.emit('joinRoom', {room : room, nickname : nickname});
+	}
 	
 	$(document).on("click", ".startCam", function() {
 		

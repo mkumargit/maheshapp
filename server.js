@@ -71,6 +71,9 @@ var onlineClients = {};
 			io.sockets.in(userRoom).emit('allUsers', nicknames);
 			io.sockets.in(userRoom).emit('joinRoom',userNickname);
 			
+			var existingRooms = Object.keys(io.sockets.manager.rooms);
+			io.sockets.emit('allRooms', existingRooms);
+			
 	    });
 		
 		socket.on('unjoinRoom', function (data) {
@@ -102,6 +105,8 @@ var onlineClients = {};
 			io.sockets.in(userRoom).emit('allUsers', nicknames);
 			io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
 			//console.log('in unjoin 2');
+			var existingRooms = Object.keys(io.sockets.manager.rooms);
+			io.sockets.emit('allRooms', existingRooms);
 			
 	    });
 		
@@ -182,6 +187,9 @@ var onlineClients = {};
 					io.sockets.in(userRoom).emit('unjoinRoom',userNickname);
 			    }
 			}
+			
+			var existingRooms = Object.keys(io.sockets.manager.rooms);
+			io.sockets.emit('allRooms', existingRooms);
 			
 		});
 		
