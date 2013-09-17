@@ -213,7 +213,7 @@ $(function(){
 		function maybeStart() {
 		
 		  if (!isStarted && localStream && isChannelReady) {
-			console.log('in maybestart method');
+			if(window.console) console.log('in maybestart method');
 			createPeerConnection();
 			pc.addStream(localStream);
 			isStarted = true;
@@ -234,11 +234,11 @@ $(function(){
 		  try {
 			pc = new RTCPeerConnection(pc_config, pc_constraints);
 			pc.onicecandidate = handleIceCandidate;
-			console.log('Created RTCPeerConnnection with:\n' +
+			if(window.console) console.log('Created RTCPeerConnnection with:\n' +
 			  '  config: \'' + JSON.stringify(pc_config) + '\';\n' +
 			  '  constraints: \'' + JSON.stringify(pc_constraints) + '\'.');
 		  } catch (e) {
-			console.log('Failed to create PeerConnection, exception: ' + e.message);
+			if(window.console) console.log('Failed to create PeerConnection, exception: ' + e.message);
 			alert('Cannot create RTCPeerConnection object.');
 			  return;
 		  }
@@ -247,7 +247,7 @@ $(function(){
 		}
 
 		function handleIceCandidate(event) {
-		  console.log('handleIceCandidate event: ', event);
+		  if(window.console) console.log('handleIceCandidate event: ', event);
 		  if (event.candidate) {
 			sendMessage({
 			  type: 'candidate',
@@ -255,7 +255,7 @@ $(function(){
 			  id: event.candidate.sdpMid,
 			  candidate: event.candidate.candidate});
 		  } else {
-			console.log('End of candidates.');
+			if(window.console) console.log('End of candidates.');
 		  }
 		}
 
@@ -270,13 +270,13 @@ $(function(){
 			 }
 		   }
 		  constraints = mergeConstraints(constraints, sdpConstraints);
-		  console.log('Sending offer to peer, with constraints: \n' +
+		  if(window.console) console.log('Sending offer to peer, with constraints: \n' +
 			'  \'' + JSON.stringify(constraints) + '\'.');
 		  pc.createOffer(setLocalAndSendMessage, null, constraints);
 		}
 
 		function doAnswer() {
-		  console.log('Sending answer to peer.');
+		  if(window.console) console.log('Sending answer to peer.');
 		  pc.createAnswer(setLocalAndSendMessage, null, sdpConstraints);
 		}
 
@@ -297,7 +297,7 @@ $(function(){
 		}
 
 		function handleRemoteStreamAdded(event) {
-		  console.log('Remote stream added.');
+		  if(window.console) console.log('Remote stream added.');
 		 // reattachMediaStream(miniVideo, localVideo);
 		 attachMediaStream(localVideo, localStream);
 		 attachMediaStream(remoteVideo, event.stream);
@@ -346,18 +346,18 @@ $(function(){
 		}
 		
 		function handleRemoteStreamRemoved(event) {
-		  console.log('Remote stream removed. Event: ', event);
+		  if(window.console) console.log('Remote stream removed. Event: ', event);
 		}
 
 		function hangup() {
-		  console.log('Hanging up.');
+		  if(window.console) console.log('Hanging up.');
 		  stop();
 		  localStream.stop();
 		  sendMessage('bye');
 		}
 
 		function handleRemoteHangup() {
-		  console.log('Session terminated.');
+		  if(window.console) console.log('Session terminated.');
 		  stop();
 		  isInitiator = false;
 		}
@@ -605,8 +605,8 @@ $(function(){
 		})
 		
 		iosocket.on('binaryMessage', function(from, bData) {
-			console.log('bData recieved is ');
-			console.log(bData);
+			if(window.console) console.log('bData recieved is ');
+			if(window.console) console.log(bData);
 			if ($('#'+from).length == false){
 				addTab(from);
 			}
@@ -648,7 +648,7 @@ $(function(){
 		})
 
 		iosocket.on('message', function (message){
-		  console.log('Received message:', message);
+		  if(window.console) console.log('Received message:', message);
 		  if (message === 'got user media') {
 			maybeStart();
 		  } else if (message.type === 'offer') {
@@ -729,7 +729,7 @@ $(function(){
 	});//end of io.connect
 	
 	function sendMessage(message){
-	  console.log('Sending message: ', message);
+	  if(window.console) console.log('Sending message: ', message);
 	  iosocket.emit('message', message);
 	}
 	
@@ -892,10 +892,10 @@ $(function(){
 			navigator.getUserMedia({ audio:true, video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
 			localStream=stream;
 			
-			console.log('Getting user media with constraints', constraints);
+			if(window.console) console.log('Getting user media with constraints', constraints);
 			isInitiator = true;
-			console.log('Adding local stream.');
-			console.log(localStream);
+			if(window.console) console.log('Adding local stream.');
+			if(window.console) console.log(localStream);
 			sendMessage('got user media');
 			iosocket.emit('camReq', targetUser, nickname);
 			isChannelReady = true;
@@ -928,8 +928,8 @@ $(function(){
 			    navigator.getUserMedia({ audio:true, video: {mandatory: {maxWidth: 640, maxHeight: 360 }}}, function(stream) {
 				localStream=stream;
 				
-				console.log('Getting user media with constraints', constraints);
-				console.log('Adding local stream.');
+				if(window.console) console.log('Getting user media with constraints', constraints);
+				if(window.console) console.log('Adding local stream.');
 				sendMessage('got user media');
 				
 				var camMsgArea = $('#'+requestorUser).closest("div").find(".msgBlock").find(".camMsgs");
@@ -962,7 +962,7 @@ $(function(){
 	
 	
 	function onVideoFail(code){
-		console.log('failed');
+		if(window.console) console.log('failed');
 	}
 	
 	$(document).on("click", ".sendCamImage", function(){
@@ -970,8 +970,8 @@ $(function(){
 		var canvas = document.getElementById('myCanvas');
 		context = canvas.getContext('2d');
 		context.drawImage(video, 0, 0, canvas.width, canvas.height);
-		console.log('bData sent is ');
-		console.log(canvas.toDataURL('image/png'));
+		if(window.console) console.log('bData sent is ');
+		if(window.console) console.log(canvas.toDataURL('image/png'));
 		iosocket.emit('binaryMsg', targetUser, nickname, canvas.toDataURL('image/png'));
 		
 	})
