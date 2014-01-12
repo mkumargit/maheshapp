@@ -124,9 +124,9 @@
 
 <!-- Show Group Client -->
 <div id="displaydiv" class="chat-menu">
-	<div style="float:left;width:20%;height:630px;overflow:auto;border:1px solid #1797C0" class="chat-div">
+	<div style="float:left;width:20%;height:630px;overflow-y:none;border:1px solid #1797C0" class="chat-div">
 		<div id="usersAndRooms" >
-			 <ul style="width:97%">
+			 <ul style="width:98%">
 				<li style="float:left;width:48%"><a href="#loggedInUsers" style="display:block;">Users</a></li>
 				<li style="float:right;width:48%"><a href="#loggedInRooms" style="display:block;">Rooms</a></li>
 			</ul>
@@ -144,6 +144,25 @@
 </div>
 
 <!-- webrtc -->
+
+<div id='webertcVids' style='width:100%'>
+<div id="localVideos" style="float:left;width:auto;bottom:0;display:none">
+	<div style="width:auto">
+		<video id='localVideo' muted></video>
+	</div>
+</div>
+<div id="remoteVideos" style="float:left;width:auto;bottom:0;display:none">
+	<div style="width:auto">
+		<video id='remoteVideo'></video>
+	</div>
+	<div id="buttonbar" style='width:auto;background-color:black'>
+		<button id="mute" onclick="remotevidmute()"><b>Mute</b></button>
+		<button id="fullscreen" onclick="remotevidfull()"><b>FullScreen</b></button>
+	</div> 
+</div>
+</div>
+
+<!--
 <div id="localVideos" style="width:100%;bottom:0">
 	<div style="width:100%">
 		<video id='localVideo' muted></video>
@@ -158,6 +177,7 @@
 		<button id="fullscreen" onclick="remotevidfull()"><b>FullScreen</b></button>
 	</div> 
 </div>
+-->
 
 <!-- User chat tabs -->
 <!--div id="tabs" style="position:fixed;width:260px;bottom:0;right:0;display:none;border: 1px solid" class="tabs-bottom" -->
@@ -201,7 +221,7 @@ function remotevidfull() {
 }
 
 $(function(){
-		
+
 		var isChannelReady;
 		var isInitiator;
 		var isStarted = false;
@@ -379,15 +399,21 @@ $(function(){
 
 		function hangup() {
 		  if(window.console) console.log('Hanging up.');
-		  stop();
 		  localStream.stop();
+		  stop();
 		  sendMessage('bye');
+		  $("#remoteVideos").dialog("close");
+		  $("#localVideos").dialog("close");
+		  $(".startCam").css('background-color','transparent');
 		}
 
 		function handleRemoteHangup() {
 		  if(window.console) console.log('Session terminated.');
 		  stop();
 		  isInitiator = false;
+		  $("#remoteVideos").dialog("close");
+		  $("#localVideos").dialog("close");
+		  $(".startCam").css('background-color','transparent');
 		}
 
 		function stop() {
@@ -824,7 +850,6 @@ $(function(){
 	
 	var tabs2 = 
 	$( "#usersAndRooms" ).tabs();
-	
 	//$( "#tabs" ).tabs();
 		
 	function moveToBottom(){
@@ -839,7 +864,7 @@ $(function(){
 	}
 	// addTab function: adds new tab using the input from the form above
 	function addTab(targetUser) {
-		var tabContentHtml= '<div class="msgBlockHeader" style="height:20px;background-color:white"><a href="javascript:void(0)" class="startCam" style="vertical-align:top;float:right;margin-right:5%">Start Video Conference</a></div><hr/><div class = "msgAndMediaBlock" style="width:100%;height:190px;background-color:white;"><div class="msgBlock" style="float:left;width:100%"></div></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
+		var tabContentHtml= '<div class="msgBlockHeader" style="height:20px;background-color:white"><a href="javascript:void(0)" class="startCam" style="vertical-align:top;float:right;margin-right:5%"><img src="/images/webcam-icon.png" /></a></div><hr/><div class = "msgAndMediaBlock" style="width:100%;height:190px;background-color:white;"><div class="msgBlock" style="float:left;width:100%"></div></div>&nbsp;<input type="textbox" class="newText" placeholder="Type here.." style="width:99%;background-color:white;height:36px"/>';
 		var tabLabel = targetUser;
 		var label = tabLabel,
 			id = targetUser,
@@ -910,6 +935,7 @@ $(function(){
 	
 	$(document).on("click", ".startCam", function() {
 		
+		$(this).css('background-color','#1797C0');
 		var targetUser = $(this).closest("div").parent().attr("id");
 		
 		window.URL = window.URL || window.webkitURL;
@@ -945,6 +971,7 @@ $(function(){
 	
 	$(document).on("click", ".acceptCamReq", function() {
 
+			$(".startCam").css('background-color','#1797C0');
 			var requestorUser = $(this).closest("div").parent().parent().attr("id");
 			
 			isChannelReady = true;
