@@ -156,8 +156,11 @@
 		<video id='remoteVideo'></video>
 	</div>
 	<div id="buttonbar" style='width:auto;background-color:black'>
-		<button id="mute" onclick="remotevidmute()"><b>Mute</b></button>
-		<button id="fullscreen" onclick="remotevidfull()"><b>FullScreen</b></button>
+		<div id='btns' style="float:left">
+			<button id="mute" onclick="remotevidmute()"><b>Mute</b></button>
+			<button id="fullscreen" onclick="remotevidfull()"><b>FullScreen</b></button>
+		</div>
+		<div id="volSlider" style='float:left;margin-left:5px;margin-top:5px;width:150px;background-color:white'></div>
 	</div> 
 </div>
 </div>
@@ -222,6 +225,21 @@ function remotevidfull() {
 
 $(function(){
 
+		 $("#volSlider" ).slider({
+			range: "min",
+			min: 0,
+			max: 100,
+			value: 50,
+			slide: function( event, ui ) {
+				remotevidsetVol(ui.value/100);
+			}
+		});
+		
+		function remotevidsetVol(vidVol){
+			var v = document.getElementById("remoteVideo");
+			v.volume = vidVol;
+		}
+		
 		var isChannelReady;
 		var isInitiator;
 		var isStarted = false;
@@ -351,9 +369,11 @@ $(function(){
 		 attachMediaStream(remoteVideo, event.stream);
 		 remoteStream = event.stream;
 		 $("#localVideos").dialog({
+			title: "My cam",
 			position: ["left", "bottom"],
 			width:'auto',
 			height:'auto',
+			resizable: false,
 			close: hangup
 		 }).dialogExtend({
 			"close" : true,
@@ -370,9 +390,11 @@ $(function(){
 		  });
 		  
 		 $("#remoteVideos").dialog({
-			position: ["left", "bottom"],
+			title: "Remote Cam",
+			position: {my: "left",at: "right+60 bottom",of: "#localVideos"},
 			width:'auto',
 			height:'auto',
+			resizable: false,
 			close: hangup
 		 }).dialogExtend({
 			"close" : true,
