@@ -368,6 +368,9 @@ $(function(){
 		 attachMediaStream(localVideo, localStream);
 		 attachMediaStream(remoteVideo, event.stream);
 		 remoteStream = event.stream;
+		 
+		 remoteVideo.volume = 0.5;  // set default volume of remote video
+		  
 		 $("#localVideos").dialog({
 			title: "My cam",
 			position: ["left", "bottom"],
