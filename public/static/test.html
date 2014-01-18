@@ -627,7 +627,7 @@ $(function(){
 			}
 			var msgArea = $('#'+from).closest("div").find(".msgBlock");
 			var currVal = $(msgArea).val();
-			var chatMsg  = "<div class ='recvMsg'>"+message+"</div>";
+			var chatMsg  = message;
 			$(msgArea).append(chatMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 			
@@ -926,8 +926,8 @@ $(function(){
 			
 		var currVal = $(msgArea).val();
 		var currTime = new Date();
-		var chatMsgSelf  = '&nbsp;<span style="color:gray;font-weight:bold;margin-top:0.5px">'+nickname+':</span>&nbsp;'+msgInput;
-		var chatMsg  = '&nbsp;<span style="color:blue;font-weight:bold;margin-top:0.5px">'+nickname+':</span>&nbsp;'+msgInput;
+		var chatMsgSelf  = '<div>&nbsp;<span style="color:gray;font-weight:bold;margin-top:1px">'+nickname+':</span>&nbsp;'+msgInput+'</div>';
+		var chatMsg  = '<div class="recvMsg">&nbsp;<span style="color:blue;font-weight:bold;margin-top:1px">'+nickname+':</span>&nbsp;'+msgInput+'</div>';
 		$(msgArea).append(chatMsgSelf);
 		$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		$(msgInputElem).val("");
