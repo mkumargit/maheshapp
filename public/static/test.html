@@ -926,8 +926,8 @@ $(function(){
 			
 		var currVal = $(msgArea).val();
 		var currTime = new Date();
-		var chatMsgSelf  = '&nbsp;<span style="color:gray;font-weight:bold;">'+nickname+':</span>&nbsp;'+msgInput+'<br/>';
-		var chatMsg  = '&nbsp;<span style="color:blue;font-weight:bold;">'+nickname+':</span>>&nbsp;'+msgInput+'<br/><br/>';
+		var chatMsgSelf  = '<br/>&nbsp;<span style="color:gray;font-weight:bold;">'+nickname+':</span>&nbsp;'+msgInput+;
+		var chatMsg  = '<br/>&nbsp;<span style="color:blue;font-weight:bold;">'+nickname+':</span>&nbsp;'+msgInput+;
 		$(msgArea).append(chatMsgSelf);
 		$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 		$(msgInputElem).val("");
