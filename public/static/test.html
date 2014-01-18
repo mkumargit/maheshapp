@@ -96,6 +96,12 @@
 	#usersAndRooms .ui-tabs .ui-tabs-nav li {
 		width:50%;
 	}
+	.recvMsg{
+		background-color:#F8F8FF;
+		border:1px;
+		padding:5px;
+		border-radius:3px
+	}
 	
 </style>	
 </head>
@@ -620,7 +626,7 @@ $(function(){
 			}
 			var msgArea = $('#'+from).closest("div").find(".msgBlock");
 			var currVal = $(msgArea).val();
-			var chatMsg  = message;
+			var chatMsg  = "<div class ='recvMsg'>"+message+"/div>";
 			$(msgArea).append(chatMsg);
 			$(msgArea).scrollTop($(msgArea)[0].scrollHeight);
 			
